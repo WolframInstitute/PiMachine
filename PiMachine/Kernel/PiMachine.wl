@@ -1,0 +1,14 @@
+(* ::Package:: *)
+
+BeginPackage["Wolfram`PiMachine`"];
+
+(* ::Text:: *)
+(*Declare your public symbols here:*)
+
+Get["Wolfram`PiMachine`Utilities`"];
+Get["Wolfram`PiMachine`Types`"];
+Get["Wolfram`PiMachine`Terms`"];
+Get["Wolfram`PiMachine`Combinators`"];
+Get["Wolfram`PiMachine`Interpreter`"];
+
+EndPackage[];
