@@ -55,8 +55,15 @@ PiCombinator["Factorization"] := PiTerm[{
 	"factor"
 ]
 
-PiCombinator["PlusCup"] := PiTerm[Except[_] :> PiTerm[PiOne], PiFunction[PiZero, PiPlus[\[FormalCapitalA]_, PiMinus[\[FormalCapitalA]_]]], "\!\(\*SubscriptBox[\(\[Eta]\), \(+\)]\)"]
-PiCombinator["PlusCap"] := PiTerm[HoldPattern[PiTerm[PiChoice[_][x_], __] ? PiTermQ] :> PiTerm[PiBottom], PiFunction[PiPlus[\[FormalCapitalA]_, PiMinus[\[FormalCapitalA]_]], PiZero], "\!\(\*SubscriptBox[\(\[CurlyEpsilon]\), \(+\)]\)"]
+PiCombinator["PlusCup"] := PiTerm[Except[_] :> PiTerm[PiChoice[1][PiOne]], PiFunction[PiZero, PiPlus[\[FormalCapitalA]_, PiMinus[\[FormalCapitalA]_]]], "\!\(\*SubscriptBox[\(\[Eta]\), \(+\)]\)"]
+PiCombinator["PlusCap"] := PiTerm[HoldPattern[PiTerm[PiChoice[_][x_], __] ? PiTermQ] :> PiTerm[PiBottom], PiFunction[PiPlus[\[FormalCapitalA]_, PiMinus[\[FormalCapitalA]_]], PiZero], "\!\(\*SubscriptBox[\(\[Epsilon]\), \(+\)]\)"]
+
+PiCombinator["TimesCup"[v_]] := With[{term = PiTerm[v]},
+	PiTerm[PiTerm[_, PiUnit, ___] :> PiTerm[{term, PiBottom}], PiFunction[PiUnit, PiTimes[term["Type"], PiInverse[term["Type"]]]], "\!\(\*SubscriptBox[\(\[Eta]\), \(*\)]\)"]
+]
+PiCombinator["TimesCap"[v_]] := With[{term = PiTerm[v]},
+	PiTerm[{PiTerm[{PiTerm[_, v, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[v, PiInverse[v]], PiUnit], "\!\(\*SubscriptBox[\(\[Epsilon]\), \(*\)]\)"]
+]
 
 ResourceFunction["AddCodeCompletion"]["PiCombinator"][DownValues[PiCombinator][[All, 1, 1, 1]]];
 
