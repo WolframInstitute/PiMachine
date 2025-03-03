@@ -45,7 +45,7 @@ PiZero /: MakeBoxes[PiZero, _] := InterpretationBox["\[DoubleStruckZero]", PiZer
 PiUnit /: MakeBoxes[PiUnit, _] := InterpretationBox["\[DoubleStruckOne]", PiUnit, Tooltip -> "\[DoubleStruckOne]: \[CapitalPi] type"]
 
 PiPlus /: MakeBoxes[PiPlus[xs__] ? PiTypeQ, form_] :=
-	InterpretationBox[#, PiPlus[xs], Tooltip -> "\[CirclePlus]: \[CapitalPi] type"] & @ (Parenthesize[CirclePlus[xs], form, Plus] /. "\[CirclePlus]" -> "+")
+	InterpretationBox[#, PiPlus[xs], Tooltip -> "\[CirclePlus]: \[CapitalPi] type"] & @ With[{type = Replace[CirclePlus[xs], CirclePlus[PiUnit, PiUnit] -> "\[DoubleStruckCapitalB]"]}, Parenthesize[type, form, Plus] /. "\[CirclePlus]" -> "+"]
 PiTimes /: MakeBoxes[PiTimes[xs__] ? PiTypeQ, form_] :=
 	InterpretationBox[#, PiTimes[xs], Tooltip -> "\[CircleTimes]: \[CapitalPi] type"] & @ (Parenthesize[CircleTimes[xs], form, Times] /. "\[CircleTimes]" -> "\[Times]")
 

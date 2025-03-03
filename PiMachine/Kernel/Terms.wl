@@ -4,7 +4,7 @@ BeginPackage["Wolfram`PiMachine`"];
 
 ClearAll[
     PiTerm, PiTermQ,
-	PiOne, PiChoice, PiHole, PiBottom
+	PiOne, PiChoice, PiHole, PiFrame, PiBottom
 ]
 
 Begin["`Private`"];
@@ -26,14 +26,14 @@ term_PiTerm /; System`Private`HoldNotValidQ[term] && MatchQ[Unevaluated[term], H
 		]) |
 
 	PiTerm[PiHole, _PiContinuation ? PiTypeQ, ___] |
-	(PiTerm[PiFrame[PiHole /* c2_ ? PiTermQ, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; k["Type"] === PiContinuation @@ (PiFunction @@ t) /* c2["Type"]) |
-	(PiTerm[PiFrame[c1_ ? PiTermQ /* PiHole, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; k["Type"] === PiContinuation @@ c1["Type"] /* (PiFunction @@ t)) |
+	(PiTerm[PiFrame[PiHole /* c2_ ? PiTermQ, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ (PiFunction @@ t) /* c2["Type"]]) |
+	(PiTerm[PiFrame[c1_ ? PiTermQ /* PiHole, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ c1["Type"] /* (PiFunction @@ t)]) |
 	
-	(PiTerm[PiFrame[c1_ ? PiTermQ \[CirclePlus] PiHole, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; k["Type"] === PiContinuation @@ PiPlus[c1["Type"], PiFunction @@ t]) |
-	(PiTerm[PiFrame[PiHole \[CirclePlus] c2_ ? PiTermQ, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; k["Type"] === PiContinuation @@ PiPlus[PiFunction @@ t, c2["Type"]]) |
+	(PiTerm[PiFrame[CirclePlus[c1_ ? PiTermQ, PiHole], k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ PiPlus[c1["Type"], PiFunction @@ t]]) |
+	(PiTerm[PiFrame[CirclePlus[PiHole, c2_ ? PiTermQ], k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ PiPlus[PiFunction @@ t, c2["Type"]]]) |
 	
-	(PiTerm[PiFrame[{c1_ ? PiTermQ, x_ ? PiTermQ} \[CircleTimes] PiHole, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[c1["Type"], PiFunction[_, Verbatim[x["Type"]]]] && k["Type"] === PiContinuation @@ PiTimes[c1["Type"], PiFunction @@ t]) |
-	(PiTerm[PiFrame[PiHole \[CircleTimes] {c2_ ? PiTermQ, y_ ? PiTermQ}, k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[c2["Type"], PiFunction[Verbatim[y["Type"]], _]] && k["Type"] === PiContinuation @@ PiTimes[PiFunction @@ t, c2["Type"]]) |
+	(PiTerm[PiFrame[CircleTimes[{c1_ ? PiTermQ, x_ ? PiTermQ}, PiHole], k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[c1["Type"], PiFunction[_, Verbatim[x["Type"]]]] && k["Type"] === PiContinuation @@ PiTimes[c1["Type"], PiFunction @@ t]) |
+	(PiTerm[PiFrame[CircleTimes[PiHole, {c2_ ? PiTermQ, y_ ? PiTermQ}], k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[c2["Type"], PiFunction[Verbatim[y["Type"]], _]] && k["Type"] === PiContinuation @@ PiTimes[PiFunction @@ t, c2["Type"]]) |
 	
 	PiTerm[- PiTerm[_, a_, ___], PiMinus[a_], ___] | 
 	PiTerm[Right[PiTerm[_, a_, ___] ? PiTermQ], PiForward[a_], ___] |
@@ -56,13 +56,13 @@ PiTerm[xs_List] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ xs
 PiTerm[xs_CirclePlus] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ List @@ xs},
 	PiTerm[If[Length[xs] == 1, First, Identity][CirclePlus @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiPlus[as__], PiPlus[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiPlus @@ Comap[terms, "Type"], PiTypeQ]
 ]
-PiTerm[PiChoice[i_Integer][x_] /; ! PiTermQ[x], type : HoldPattern[PiPlus[ts__]] ? PiTypeQ] /; 1 <= i <= Length[{ts}] :=
-	Enclose @ PiTerm[PiChoice[i][ConfirmBy[PiTerm[x, {ts}[[i]]], PiTermQ]], type]
+PiTerm[PiChoice[i_Integer][x_] /; ! PiTermQ[x], type : HoldPattern[PiPlus[ts__]] ? PiTypeQ, args___] /; 1 <= i <= Length[{ts}] :=
+	Enclose @ PiTerm[PiChoice[i][ConfirmBy[PiTerm[x, {ts}[[i]]], PiTermQ]], type, args]
 PiTerm[PiChoice[i_Integer][x_]] := Enclose @ With[{term = PiTerm[x]}, PiTerm[PiChoice[i][term], ConfirmBy[PiPlus @@ ReplacePart[ConstantArray[PiZero, Max[i, 2]], i -> term["Type"]], PiTypeQ]]]
 
-PiTerm[term : HoldPattern[RightComposition[fs__ ? PiTermQ]]] := With[{types = UnifyFunctionTypes @ (List @@@ Comap[{fs}, "Type"])},
+PiTerm[HoldPattern[RightComposition[fs__ ? PiTermQ]]] := With[{types = UnifyFunctionTypes @ (List @@@ Comap[{fs}, "Type"])},
 	PiTerm[
-		RightComposition @@ MapThread[PiTerm[#1, #2, Sequence @@ #3] &, {Comap[{fs}, "Term"], PiFunction @@@ types, Comap[{fs}, "Arguments"]}],
+		RightComposition @@ MapThread[PiTerm[#1, #2, Sequence @@ #3] &, {{fs}, PiFunction @@@ types, Comap[{fs}, "Arguments"]}],
 		PiFunction[types[[1, 1]], types[[-1, 2]]]
 	] /; MatchQ[types, {{_, _} ..}] && AllTrue[Partition[Most @ Rest @ Catenate[types], 2], Apply[SameQ]]
 ]
@@ -89,11 +89,17 @@ PiTerm[- (PiTerm[- x_, PiMinus[a_], ___] ? PiTermQ)] := PiTerm[x, a]
 PiTerm[Right[x_]] := With[{term = PiTerm[x]}, PiTerm[Right[term], PiForward[term["Type"]]]]
 PiTerm[Left[x_]] := With[{term = PiTerm[x]}, PiTerm[Left[term], PiBackward[term["Type"]]]]
 
+
 PiTerm[term_PiTerm ? PiTermQ] := term
 PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ] := Enclose[
-	PiTerm[term["Term"] /. First @ Confirm[unify[term["Type"], type]], type, ##] & @@ term["Arguments"]
+	PiTerm[TypeSubstitute[term["Term"], First @ Confirm[unify[term["Type"], type]]], type, ##] & @@ term["Arguments"]
 ]
-PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ, args__] := PiTerm[PiTerm[term["Term"], type]["Term"], type, args]
+PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ, args__] := PiTerm[PiTerm[term, type]["Term"], type, args]
+
+
+(* Term equality *)
+
+PiTerm /: Equal[ts__PiTerm] := Equal @@ Through[{ts}["Term"]] && Equal @@ Through[{ts}["Type"]]
 
 
 (* Formatting *)
@@ -105,16 +111,18 @@ Format[PiBottom] = "\[Perpendicular]"
 
 PiTerm /: MakeBoxes[term_PiTerm ? PiTermQ, form_] :=
 	InterpretationBox[#, term] & @ TooltipBox[
-		ToBoxes[
-			If[MatchQ[term["Type"], _PiFunction | _PiContinuation], Style[#, Bold] &, Framed[#, FrameMargins -> Tiny] &] @
-				Replace[term["Arguments"], {{label_, ___} :> label, {} :> Replace[term["Term"], {
-					PiOne -> Style[PiOne, Bold],
-					PiChoice[i_][t_] :> Superscript[t, i],
-					PiFrame[x_, y_] :> Row[Replace[{x, y}, t : Except[PiTerm[PiHole, __]] :> Row[{"(", Replace[t, RightComposition[a_, b_] :> Row[{a, ";", b}]], ")"}], 1], "\[FilledSmallCircle]"],
-					Right[x_] :> Subscript[x, "\[RightTriangle]"],
-					Left[x_] :> Subscript[x, "\[LeftTriangle]"]
-				}]}],
-			form
+		If[MatchQ[term["Type"], _PiFunction | _PiContinuation], StyleBox[#, Bold] &, FrameBox[#, FrameMargins -> Tiny] &] @
+			Replace[term["Arguments"], {{label_, ___} :> ToBoxes[label, form], {} :> Replace[term["Term"], {
+				PiOne -> ToBoxes[Style[PiOne, Bold], form],
+				PiChoice[i : 1 | 2][_] /; term["Type"] === PiPlus[PiUnit, PiUnit] :> Switch[i, 1, "\[DoubleStruckCapitalF]", 2, "\[DoubleStruckCapitalT]"],
+				PiChoice[i_][t_] :> ToBoxes[Superscript[t, i], form],
+				HoldPattern[RightComposition[xs__]] :> ToBoxes[Row[{xs}, ";"], form],
+				(* TODO: Parenthesize properly *)
+				PiFrame[x_, y_] :> RowBox[Riffle[Replace[{x, y}, {t : Except[PiTerm[PiHole, __]] :> With[{expr = Replace[t, RightComposition[a_, b_] :> Row[{"(", a, ";", b, ")"}]]}, Parenthesize[expr, form, Times]], t_ :> ToBoxes[t, form]}, 1], "\[FilledSmallCircle]"]],
+				Right[x_] :> ToBoxes[Subscript[x, "\[RightTriangle]"], form],
+				Left[x_] :> ToBoxes[Subscript[x, "\[LeftTriangle]"], form],
+				x_ :> ToBoxes[x, form]
+			}]}
 		],
 		ToBoxes[term["Type"], TraditionalForm]
 	]

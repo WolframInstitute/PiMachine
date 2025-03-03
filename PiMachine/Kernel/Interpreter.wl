@@ -3,7 +3,8 @@
 BeginPackage["Wolfram`PiMachine`"];
 
 ClearAll[
-    PiState, PiStateQ, PiRun
+    PiState, PiStateQ,
+    PiReduce
 ]
 
 Begin["`Private`"];
@@ -11,43 +12,102 @@ Begin["`Private`"];
 
 (* State *)
 
+(* PiState[combinator, term, continutation, enter/return, forward/backward] *)
+
 PiStateQ[
-    HoldPattern[PiState[PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, _ ? PiTermQ, PiTerm[_, PiContinuation[a_, b_], ___] ? PiTermQ, _ ? BooleanQ, _ ? BooleanQ]] |
+    (HoldPattern[PiState[PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, PiTerm[_, t_, ___] ? PiTermQ, PiTerm[_, PiContinuation[a_, b_], ___] ? PiTermQ, s_ ? BooleanQ, _ ? BooleanQ]] /;
+        s && t === a || ! s && t === b
+    ) |
     PiState[$Failed | _Failure | _Missing]
 ] := True
 PiStateQ[___] := False
 
 PiState[c_, v_] := PiState[c, v, Automatic]
 PiState[c_, v_, k_] := PiState[c, v, k, True]
-PiState[c_, v_, k_, t_] := PiState[c, v, k, t, True]
-PiState[c : PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, v_, Automatic, t_, d_] := PiState[c, v, PiTerm[PiHole, PiContinuation[a, b]], t, d]
+PiState[c_, v_, k_, s_] := PiState[c, v, k, s, True]
+PiState[c : PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, v_, Automatic, s_, d_] := PiState[c, v, PiTerm[PiHole, PiContinuation[a, b]], s, d]
+
+PiState[c : PiTerm[_, ct : PiFunction[a_, b_], ___] ? PiTermQ, v : PiTerm[_, t_, ___] ? PiTermQ, k : PiTerm[_, PiContinuation[a_, b_], ___] ? PiTermQ, s_ ? BooleanQ, d_] /;
+    Not[s && t === a || ! s && t === b] := Enclose @ With[{type = ct /. First @ Confirm @ unify[If[s, a, b], t]},
+        ConfirmBy[PiState[PiTerm[c, type], v, PiTerm[k, PiContinuation @@ type], s, d], PiStateQ]
+    ]
 
 
-(* State run *)
+(* State update rules *)
 
-PiRun[PiState[PiTerm[RightComposition[c1__, c2_], __], v_, k_, True, dir_] ? PiStateQ] := PiState[PiTerm[RightComposition[c1]], v, PiTerm[PiFrame[PiHole /* c2, k]], True, dir]
-PiRun[PiState[PiTerm[cs_CirclePlus, __], PiTerm[PiChoice[i_][x_], _PiPlus, ___] ? PiTermQ, k_, True, dir_] ? PiStateQ] := PiState[PiTerm[cs[[i]]], x, PiTerm[PiFrame[ReplacePart[cs, i -> PiHole], k]], True, dir]
-PiRun[PiState[PiTerm[{c1__, c2_}, __], PiTerm[{xs__, y_}, _PiTimes, ___] ? PiTermQ, k_, True, dir_] ? PiStateQ] := PiState[PiTerm[{c1}], PiTerm[{xs}], PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], True, dir]
-PiRun[PiState[PiTerm[c1_, __], v_, PiTerm[PiFrame[RightComposition[PiHole, c2__], k_], __], False, dir_] ? PiStateQ] := PiState[PiTerm[RightComposition[c2]], v, PiTerm[PiFrame[c1 /* PiHole, k]], True, dir]
-PiRun[PiState[PiTerm[c1_, __], x_, PiTerm[PiFrame[CircleTimes[PiHole, {c2_, y_}], k_], __], False, dir_] ? PiStateQ] := PiState[c2, y, PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], True, dir]
-PiRun[PiState[PiTerm[c2_, __], y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], False, dir_] ? PiStateQ] := PiState[PiTerm[{c1, c2}], PiTerm[{x, y}], k, False, dir]
-PiRun[PiState[PiTerm[c2_, __], v_, PiTerm[PiFrame[c1_ /* PiHole, k_], __], False, dir_] ? PiStateQ] := PiState[PiTerm[c1 /* c2], v, k, False, dir]
-PiRun[PiState[PiTerm[c1_, __], x_, PiTerm[PiFrame[CirclePlus[PiHole, c2_], k_], __], False, dir_] ? PiStateQ] := PiState[PiTerm[CirclePlus[c1, c2]], PiTerm[PiChoice[1][x]], k, False, dir]
-PiRun[PiState[PiTerm[c2_, __], y_, PiTerm[PiFrame[CirclePlus[c1_, PiHole], k_], __], False, dir_] ? PiStateQ] := PiState[PiTerm[CirclePlus[c1, c2]], PiTerm[PiChoice[2][y]], k, False, dir]
+(* rule 3 *)
+PiReduce[PiState[PiTerm[RightComposition[c1__, c2_], __], v_, k_, True, True] ? PiStateQ] := PiState[PiTerm[RightComposition[c1]], v, PiTerm[PiFrame[PiHole /* PiTerm[c2], k]], True, True]
+(* rule 4 and 5 *)
+PiReduce[PiState[PiTerm[cs_CirclePlus, __], PiTerm[PiChoice[i_][x_], _PiPlus, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[cs[[i]], x, PiTerm[PiFrame[ReplacePart[cs, i -> PiHole], k]], True, True]
+(* rule 6 *)
+PiReduce[PiState[PiTerm[{c1__, c2_}, __], PiTerm[{xs__, y_}, _PiTimes, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[PiTerm[{c1}], PiTerm[{xs}], PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], True, True]
+
+(* rule 7 *)
+PiReduce[PiState[c1_, v_, PiTerm[PiFrame[RightComposition[PiHole, c2__], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[RightComposition[c2]], v, PiTerm[PiFrame[c1 /* PiHole, k]], True, True]
+(* rule 8 *)
+PiReduce[PiState[c1_, x_, PiTerm[PiFrame[CircleTimes[PiHole, {c2_, y_}], k_], __], False, True] ? PiStateQ] := PiState[c2, y, PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], True, True]
+(* rule 9 *)
+PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[{c1, c2}, PiFunction @@ k["Type"]], PiTerm[{x, y}], k, False, True]
+(* rule 10 *)
+PiReduce[PiState[c2_, v_, PiTerm[PiFrame[c1_ /* PiHole, k_], __], False, True] ? PiStateQ] := PiState[PiTerm[c1 /* c2, PiFunction @@ k["Type"]], v, k, False, True]
+(* rule 11 *)
+PiReduce[PiState[c1_, x_, PiTerm[PiFrame[CirclePlus[PiHole, c2_], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[CirclePlus[c1, c2], PiFunction @@ k["Type"]], PiTerm[PiChoice[1][x],  PiPlus[x["Type"], k["Type"][[2, 2]]]], k, False, True]
+(* rule 12 *)
+PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CirclePlus[c1_, PiHole], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[CirclePlus[c1, c2], PiFunction @@ k["Type"]], PiTerm[PiChoice[2][y], PiPlus[k["Type"][[2, 1]], y["Type"]]], k, False, True]
+
+(* rule 13 *)
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiPlus[PiMinus[a_], a_], PiZero], ___], PiTerm[PiChoice[2][v : PiTerm[_, b_, ___]], ___], k_, True, True] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cap, PiTerm[PiChoice[1][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, True, False]
+(* rule 14 *)
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiPlus[PiMinus[a_], a_], PiZero], ___], PiTerm[PiChoice[1][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, True, True] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cap, PiTerm[PiChoice[2][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, True, False]
+
+(* rule 15 *)
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], ___], PiTerm[PiChoice[1][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, False, False] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cup, PiTerm[PiChoice[2][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, True]
+(* rule 16 *)
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], ___], PiTerm[PiChoice[2][v : PiTerm[_, b_, ___]], ___], k_, False, False] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cup, PiTerm[PiChoice[1][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, True]
+
+(* rule 1 and 2 *)
+PiReduce[PiState[c_, v_, k_, True, True] ? PiStateQ] := PiState[c, c[v], k, False, True]
 
 
-PiRun[PiState[cap : PiTerm[_, PiFunction[PiPlus[a_, PiMinus[a_]], PiZero], ___], PiTerm[PiChoice[1][v : PiTerm[_, b_, ___]], ___], k_, True, True] ? PiStateQ] /; MatchQ[b, a] :=
-    PiState[cap, PiTerm[PiChoice[2][- v]], k, True, False]
-PiRun[PiState[cap : PiTerm[_, PiFunction[PiPlus[a_, PiMinus[a_]], PiZero], ___], PiTerm[PiChoice[2][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, True, True] ? PiStateQ] /; MatchQ[b, a] :=
-    PiState[cap, PiTerm[PiChoice[1][- v]], k, True, False]
+(* Reverse rules *)
 
-PiRun[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[a_, PiMinus[a_]]], ___], PiTerm[PiChoice[1][v : PiTerm[_, b_, ___]], ___], k_, False, False] ? PiStateQ] /; MatchQ[b, a] :=
-    PiState[cup, PiTerm[PiChoice[2][- v]], k, False, True]
-PiRun[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[a_, PiMinus[a_]]], ___], PiTerm[PiChoice[2][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, False, False] ? PiStateQ] /; MatchQ[b, a] :=
-    PiState[cup, PiTerm[PiChoice[1][- v]], k, False, True]
+(* rule 3 *)
+PiReduce[PiState[c1_, v_, PiTerm[PiFrame[PiHole /* c2_, k_], __], True, False] ? PiStateQ] := PiState[PiTerm[RightComposition[c1, c2]], v, k, True, False]
+(* rule 4 and 5 *)
+PiReduce[PiState[c1_, x_, PiTerm[PiFrame[CirclePlus[c2___, PiHole, c3___], k_], __], True, False] ? PiStateQ] := PiState[PiTerm[CirclePlus[c2, c1, c3]], PiTerm[PiChoice[Length[{c2}] + 1][x], k["Type"][[1]]], k, True, False]
+(* rule 6 *)
+PiReduce[PiState[c1_, x_, PiTerm[PiFrame[CircleTimes[PiHole, {c2_, y_}], k_], __], True, False] ? PiStateQ] := PiState[PiTerm[{c1, c2}], PiTerm[{x, y}], k, True, False]
+(* rule 7 *)
+PiReduce[PiState[c2_, v_, PiTerm[PiFrame[c1_ /* PiHole, k_], __], True, False] ? PiStateQ] := PiState[c1, v, PiTerm[PiFrame[PiHole /* c2, k]], False, False]
+(* rule 8 *)
+PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], True, False] ? PiStateQ] := PiState[c1, x, PiTerm[PiFrame[PiTerm[CircleTimes[PiHole, {c2, y}]], k]], False, False]
+(* rule 9 *)
+PiReduce[PiState[PiTerm[{c1_, c2__}, __], PiTerm[{x_, ys__}, __], k_, False, False] ? PiStateQ] := PiState[PiTerm[{c2}], PiTerm[{ys}], PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], False, False]
+(* rule 10 *)
+PiReduce[PiState[PiTerm[RightComposition[c1_, c2__], __], v_, k_, False, False] ? PiStateQ] := PiState[PiTerm[RightComposition[c2]], v, PiTerm[PiFrame[PiTerm[c1] /* PiHole, k]], False, False]
+(* rule 11 and 12 *)
+PiReduce[PiState[PiTerm[cs_CirclePlus, __], PiTerm[PiChoice[i_][x_], _PiPlus, ___] ? PiTermQ, k_, False, False] ? PiStateQ] := PiState[cs[[i]], x, PiTerm[PiFrame[ReplacePart[cs, i -> PiHole], k]], False, False]
 
+(* rule 13 *)
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiPlus[PiMinus[a_], a_], PiZero], ___], PiTerm[PiChoice[1][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, True, False] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cap, PiTerm[PiChoice[2][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, True, True]
+(* rule 14 *)
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiPlus[PiMinus[a_], a_], PiZero], ___], PiTerm[PiChoice[2][v : PiTerm[_, b_, ___]], ___], k_, True, False] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cap, PiTerm[PiChoice[1][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, True, True]
 
-PiRun[PiState[c_, v_, k_, True, dir_] ? PiStateQ] := PiState[c, c[v], k, False, dir]
+(* rule 15 *)
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], ___], PiTerm[PiChoice[2][v : PiTerm[_, b_, ___]], ___], k_, False, True] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cup, PiTerm[PiChoice[1][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, False]
+(* rule 16 *)
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], ___], PiTerm[PiChoice[1][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, False, True] ? PiStateQ] /; MatchQ[b, a] :=
+    PiState[cup, PiTerm[PiChoice[2][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, False]
+
+(* rule 1 and 2 *)
+PiReduce[PiState[c_, v_, k_, False, False] ? PiStateQ] := PiState[c, PiCombinatorInverse[c][v], k, True, False]
 
 
 (* Eval *)
@@ -55,16 +115,18 @@ PiRun[PiState[c_, v_, k_, True, dir_] ? PiStateQ] := PiState[c, c[v], k, False, 
 (* Forward *)
 
 PiEval[c : PiTerm[_, a_, ___] ? PiTermQ, v : PiTerm[_, a_, ___] ? PiTermQ, True] :=
-    Replace[PiRun[PiState[c, v, Automatic, True, True]], {PiState[_, w_, _, False, True] ? PiStateQ :> w, _ -> $Failed}]
+    Replace[PiReduce[PiState[c, v, Automatic, True, True]], {PiState[_, w_, _, False, True] ? PiStateQ :> w, _ -> $Failed}]
 
 (* Backward *)
 
-PiEval[c_, v_, False]
+(* PiEval[c_, v_, False] *)
 
 
 (* Apply *)
 
 PiTerm[comp_RightComposition, _PiFunction, ___][x_PiTerm ? PiTermQ] := comp[x]
+PiTerm[choice_CirclePlus, _PiFunction, ___][PiTerm[PiChoice[i_][x_ ? PiTermQ], t_PiPlus, ___] ? PiTermQ] /; 1 <= i Length[choice] := With[{u = choice[[i]][x]}, PiTerm[PiChoice[i][u], ReplacePart[t, i -> u["Type"]]]]
+PiTerm[fs : {__PiTerm}, _PiFunction, ___][PiTerm[xs : {__PiTerm ? PiTermQ}, _PiTimes, ___] ? PiTermQ] /; Length[fs] == Length[xs] := PiTerm[MapThread[Construct, {fs, xs}]]
 PiTerm[rules_, PiFunction[a_, b_], ___][x_PiTerm ? PiTermQ] := Enclose @ ConfirmBy[Replace[ConfirmBy[x, MatchQ[#["Type"], a] &], rules], MatchQ[#["Type"], b] &]
 
 

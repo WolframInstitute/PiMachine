@@ -4,7 +4,8 @@ BeginPackage["Wolfram`PiMachine`"];
 
 ClearAll[
     Uniquify, UniquifyTypes, CanonicalizeTypes, UnifyFunctionTypes,
-    makeReplaceRule, unify
+    makeReplaceRule, unify,
+    TypeSubstitute
 ]
 
 Begin["`Private`"];
@@ -16,7 +17,7 @@ Uniquify[expr_, ref_ : None] := With[{types = DeleteDuplicates @ Cases[Replace[r
 UniquifyTypes[expr_, ref_ : None] := expr /. Uniquify[expr, ref]
 
 CanonicalizeTypes[expr_] := With[{types = DeleteDuplicates @ Cases[expr, Verbatim[Pattern][name_, _] :> Hold[name], All]},
-	expr /. MapThread[{old, new} |-> Function[Null, HoldPattern @@ old :> #, HoldFirst] @@ new, {types, ToExpression[ToUpperCase[#], StandardForm, Hold] & /@ Take[Alphabet[], Length[types]]}]
+	expr /. MapThread[{old, new} |-> Function[Null, HoldPattern @@ old :> #, HoldFirst] @@ new, {types, ToExpression["\[FormalCapital" <> ToUpperCase[#] <> "]", StandardForm, Hold] & /@ Take[Alphabet[], Length[types]]}]
 ]
 UnifyFunctionTypes[fs : {{_, _} ..}, g : {_, _}] := Enclose @ With[{ug = UniquifyTypes[g, g[[1]]]},
 	CanonicalizeTypes[Append[fs, ug] /. Confirm @ ResourceFunction["MostGeneralUnifier"][Evaluate @ fs[[-1, 2]], Evaluate @ ug[[1]]]]
@@ -42,6 +43,12 @@ unify[x_, y_, patt : Except[OptionsPattern[]] : _Pattern, opts : OptionsPattern[
                 makeReplaceRule[MapAt[Replace[s_Symbol :> Pattern @@ {s, Blank[]}], x, pos], holdPatts]]], Length[#] > 0 &]
     ],
     Failure["NonUnifiable", <|"MessageTemplate" -> "Can't unify `` with ``", "MessageParameters" -> {x, y}|>] &
+]
+
+
+TypeSubstitute[term_, rules_] := If[PiTermQ[term],
+	PiTerm[TypeSubstitute[term["Term"], rules], term["Type"] /. rules, Sequence @@ term["Arguments"]],
+	term /. t_PiTerm ? PiTermQ :> RuleCondition[TypeSubstitute[t, rules]]
 ]
 
 End[];
