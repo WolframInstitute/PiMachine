@@ -32,7 +32,7 @@ PiTypeQ[HoldPattern[
 	(PiFunction | PiContinuation)[ts : Repeated[_ ? PiTypeQ, {2}]] |
 
 	PiMinus[_ ? PiTypeQ] |
-	PiInverse[_ ? PiTypeQ] |
+	PiInverse[_ ? PiTermQ] |
 
 	PiForward[_ ? PiTypeQ] | PiBackward[_ ? PiTypeQ]
 ]] := True
@@ -57,7 +57,7 @@ PiContinuation /: MakeBoxes[PiContinuation[x_, y_] ? PiTypeQ, form_] :=
 PiMinus /: MakeBoxes[PiMinus[x_] ? PiTypeQ, form_] :=
 	InterpretationBox[#, PiMinus[x], Tooltip -> "-: \[CapitalPi] type"] & @ (RowBox[{"-", MakeBoxes[x, form]}])
 PiInverse /: MakeBoxes[PiInverse[x_] ? PiTypeQ, form_] :=
-	InterpretationBox[#, PiInverse[x], Tooltip -> "\!\(\*SuperscriptBox[\(\\\ \), \(-1\)]\): \[CapitalPi] type"] & @ (RowBox[{"\!\(\*SuperscriptBox[\(\\\ \), \(-1\)]\)", MakeBoxes[x, form]}])
+	InterpretationBox[#, PiInverse[x], Tooltip -> "\!\(\*SuperscriptBox[\(\\\ \), \(-1\)]\): \[CapitalPi] type"] & @ (SuperscriptBox[MakeBoxes[x, form], -1])
 
 PiForward /: MakeBoxes[PiForward[x_] ? PiTypeQ, form_] :=
 	InterpretationBox[#, PiForward[x], Tooltip -> "\[RightArrow]: \[CapitalPi] type"] & @ SuperscriptBox[MakeBoxes[x, form], "\[RightArrow]"]

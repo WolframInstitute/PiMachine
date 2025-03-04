@@ -79,10 +79,10 @@ PiCombinator["PlusCup"] := PiTerm[Except[_] :> PiTerm[PiChoice[2][PiOne]], PiFun
 PiCombinator["PlusCap"] := PiTerm[HoldPattern[PiTerm[PiChoice[_][_], __] ? PiTermQ] :> PiTerm[PiBottom, PiZero], PiFunction[PiPlus[PiMinus[\[FormalCapitalA]_], \[FormalCapitalA]_], PiZero], $PiCombinatorLabels["PlusCap"]]
 
 PiCombinator["TimesCup"[v_]] := With[{term = PiTerm[v]},
-	PiTerm[PiTerm[_, PiUnit, ___] :> PiTerm[{term, PiBottom}], PiFunction[PiUnit, PiTimes[PiInverse[term["Type"]], term["Type"]]], $PiCombinatorLabels["TimesCup"][term]]
+	PiTerm[PiTerm[_, PiUnit, ___] :> PiTerm[{term, PiBottom}], PiFunction[PiUnit, PiTimes[PiInverse[term], term["Type"]]], $PiCombinatorLabels["TimesCup"][term]]
 ]
 PiCombinator["TimesCap"[v_]] := With[{term = PiTerm[v]},
-	PiTerm[{PiTerm[{PiTerm[_, v, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[v], v], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
+	PiTerm[{PiTerm[{PiTerm[_, v, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[v], term["Type"]], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
 ]
 
 ResourceFunction["AddCodeCompletion"]["PiCombinator"][Replace[DownValues[PiCombinator][[All, 1, 1, 1]], h_String[_] :> h, 1]];

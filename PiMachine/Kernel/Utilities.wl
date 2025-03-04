@@ -20,7 +20,7 @@ CanonicalizeTypes[expr_] := With[{types = DeleteDuplicates @ Cases[expr, Verbati
 	expr /. MapThread[{old, new} |-> Function[Null, HoldPattern @@ old :> #, HoldFirst] @@ new, {types, ToExpression["\[FormalCapital" <> ToUpperCase[#] <> "]", StandardForm, Hold] & /@ Take[Alphabet[], Length[types]]}]
 ]
 UnifyFunctionTypes[fs : {{_, _} ..}, g : {_, _}] := Enclose @ With[{ug = UniquifyTypes[g, g[[1]]]},
-	CanonicalizeTypes[Append[fs, ug] /. Confirm @ ResourceFunction["MostGeneralUnifier"][Evaluate @ fs[[-1, 2]], Evaluate @ ug[[1]]]]
+	CanonicalizeTypes[Append[fs, ug] /. Confirm[MostGeneralUnifier @@ {fs[[-1, 2]], ug[[1]]}]]
 ]
 UnifyFunctionTypes[{f : {_, _}, fs : {_, _} ..}] := Fold[UnifyFunctionTypes, {f}, {fs}]
 

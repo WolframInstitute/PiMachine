@@ -4,8 +4,10 @@ BeginPackage["Wolfram`PiMachine`"];
 
 ClearAll[
     PiBool, PiTrue, PiFalse,
-    PiNot, PiCNot, PiIf, PiCopy,
-    PiZigZag
+    PiNot, PiCNot, PiIf, PiToffoli,
+    PiCopy,
+    PiZigZag,
+    PiPlusTrace, PiTimesTrace
 ]
 
 Begin["`Private`"];
@@ -37,6 +39,8 @@ PiBool[0] := PiUnit
 PiBool[1] := PiPlus[PiUnit, PiUnit]
 PiBool[n_Integer] := PiTimes @@ Table[PiBool[1], n]
 
+BoolId[n_Integer ? NonNegative] := PiTerm[id, PiFunction[PiBool[n], PiBool[n]]]
+
 PiFalse = PiTerm[PiChoice[1][PiOne], PiBool[1]]
 PiTrue = PiTerm[PiChoice[2][PiOne], PiBool[1]]
 
@@ -50,14 +54,23 @@ PiCNot = PiTerm[
     "cnot"
 ]
 
-PiIf[c1_, c2_] := PiTerm[dist /* PiTerm[CirclePlus[PiTerm[{id, c1}], PiTerm[{id, c2}]]] /* fact]
+PiIf[c1_, c2_] := PiTerm[dist /* PiTerm[CirclePlus[PiTerm[{BoolId[0], c1}], PiTerm[{BoolId[0], c2}]]] /* fact]
 
-PiCopy[0] := PiTerm[id, PiFunction[PiBool[1], PiBool[1]]]
-PiCopy[1] := PiTerm[PiTerm[swapt /* PiCNot /*swapt], PiFunction[PiBool[2], PiBool[2]]]
+PiToffoli[0] := BoolId[0]
+PiToffoli[1] := PiTerm[swap, PiFunction[PiBool[1], PiBool[1]]]
+PiToffoli[n_Integer ? Positive] := PiIf[id, PiToffoli[n - 1]]
+
+PiCopy[0] := boolId
+PiCopy[1] := PiTerm[PiTerm[swapt /* PiCNot /* swapt], PiFunction[PiBool[2], PiBool[2]]]
 PiCopy[n_Integer ? Positive] := PiTerm[assoclt /* PiTerm[{PiCopy[n - 1], id}] /* assocrt]
 
 
 PiZigZag = PiTerm[zeroi /* PiTerm[CirclePlus[eta, id]] /* assocr /* PiTerm[CirclePlus[id, swap]] /* assocl /* PiTerm[CirclePlus[eps, id]] /* zeroe]
+
+
+PiPlusTrace[f_] := PiTerm[zeroi /* PiTerm[CirclePlus[eta, id]] /* assocr /* PiTerm[CirclePlus[id, f]] /* assocl /* PiTerm[CirclePlus[eps, id]] /* zeroe]
+
+PiTimesTrace[v_, f_] := PiTerm[uniti /* PiTerm[{PiCombinator["TimesCup"[v]], id}] /* assocrt /* PiTerm[{id, f}] /* assoclt /* PiTerm[{PiCombinator["TimesCap"[v]], id}] /* unite]
 
 
 End[];

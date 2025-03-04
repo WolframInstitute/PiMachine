@@ -35,10 +35,10 @@ term_PiTerm /; System`Private`HoldNotValidQ[term] && MatchQ[Unevaluated[term], H
 	(PiTerm[PiFrame[CircleTimes[{c1_ ? PiTermQ, x_ ? PiTermQ}, PiHole], k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[c1["Type"], PiFunction[_, Verbatim[x["Type"]]]] && k["Type"] === PiContinuation @@ PiTimes[c1["Type"], PiFunction @@ t]) |
 	(PiTerm[PiFrame[CircleTimes[PiHole, {c2_ ? PiTermQ, y_ ? PiTermQ}], k_ ? PiTermQ], t_PiContinuation ? PiTypeQ, ___] /; MatchQ[c2["Type"], PiFunction[Verbatim[y["Type"]], _]] && k["Type"] === PiContinuation @@ PiTimes[PiFunction @@ t, c2["Type"]]) |
 	
-	PiTerm[- PiTerm[_, a_, ___], PiMinus[a_], ___] | 
-	PiTerm[Right[PiTerm[_, a_, ___] ? PiTermQ], PiForward[a_], ___] |
-	PiTerm[Left[PiTerm[_, a_, ___] ? PiTermQ], PiBackward[a_], ___] |
-	PiTerm[PiBottom, __]
+	PiTerm[- PiTerm[_, a_, ___], PiMinus[a_] ? PiTypeQ, ___] | 
+	PiTerm[Right[PiTerm[_, a_, ___] ? PiTermQ], PiForward[a_] ? PiTypeQ, ___] |
+	PiTerm[Left[PiTerm[_, a_, ___] ? PiTermQ], PiBackward[a_] ? PiTypeQ, ___] |
+	PiTerm[PiBottom, _PiInverse ? PiTypeQ, ___]
 	
 ]] := (System`Private`HoldSetValid[term]; System`Private`HoldSetNoEntry[term]; term)
 
@@ -51,10 +51,10 @@ HoldPattern[PiTerm[_, _, args___] ? PiTermQ]["Arguments"] := {args}
 
 PiTerm[PiOne] := PiTerm[PiOne, PiUnit]
 PiTerm[xs_List] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ xs},
-	PiTerm[If[Length[xs] == 1, First, Identity] @ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiTimes[as__], PiTimes[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}], #] & @ ConfirmBy[PiTimes @@ Comap[terms, "Type"], PiTypeQ]
+	PiTerm[If[Length[xs] == 1, PiTerm[First[terms], #], MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiTimes[as__], PiTimes[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiTimes @@ Comap[terms, "Type"], PiTypeQ]
 ]
 PiTerm[xs_CirclePlus] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ List @@ xs},
-	PiTerm[If[Length[xs] == 1, First, Identity][CirclePlus @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiPlus[as__], PiPlus[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiPlus @@ Comap[terms, "Type"], PiTypeQ]
+	PiTerm[If[Length[xs] == 1, PiTerm[First[terms], #], CirclePlus @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiPlus[as__], PiPlus[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiPlus @@ Comap[terms, "Type"], PiTypeQ]
 ]
 PiTerm[PiChoice[i_Integer][x_] /; ! PiTermQ[x], type : HoldPattern[PiPlus[ts__]] ? PiTypeQ, args___] /; 1 <= i <= Length[{ts}] :=
 	Enclose @ PiTerm[PiChoice[i][ConfirmBy[PiTerm[x, {ts}[[i]]], PiTermQ]], type, args]
@@ -68,9 +68,9 @@ PiTerm[HoldPattern[RightComposition[fs__ ? PiTermQ]]] := With[{types = UnifyFunc
 ]
 
 PiTerm[HoldPattern @ PiFrame[PiHole /* PiTerm[c2_, PiFunction[a_, b_], args1___] ? PiTermQ, PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
-	Enclose[PiTerm[PiFrame[PiHole /* PiTerm[c2, PiFunction[a /. #, b /. #], args1], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[c, a]] & @ Confirm[ResourceFunction["MostGeneralUnifier"][b, d]]]
+	Enclose[PiTerm[PiFrame[PiHole /* PiTerm[c2, PiFunction[a /. #, b /. #], args1], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[c, a]] & @ Confirm[MostGeneralUnifier[b, d]]]
 PiTerm[HoldPattern @ PiFrame[PiTerm[c1_, PiFunction[a_, b_], args1___] ? PiTermQ /* PiHole, PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
-	Enclose[PiTerm[PiFrame[PiTerm[c1, PiFunction[a /. #, b /. #], args1] /* PiHole, PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[b, d]] & @ Confirm[ResourceFunction["MostGeneralUnifier"][a, c]]]
+	Enclose[PiTerm[PiFrame[PiTerm[c1, PiFunction[a /. #, b /. #], args1] /* PiHole, PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[b, d]] & @ Confirm[MostGeneralUnifier[a, c]]]
 
 PiTerm[frame : HoldPattern @ PiFrame[CirclePlus[PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, PiHole], PiTerm[_, PiContinuation[PiPlus[a_, c__], PiPlus[b_, d__]], ___] ? PiTermQ]] :=
 	PiTerm[frame, PiContinuation[PiPlus[c], PiPlus[d]]]

@@ -40,7 +40,7 @@ PiReduce[PiState[PiTerm[RightComposition[c1__, c2_], __], v_, k_, True, True] ? 
 (* rule 4 and 5 *)
 PiReduce[PiState[PiTerm[cs_CirclePlus, __], PiTerm[PiChoice[i_][x_], _PiPlus, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[cs[[i]], x, PiTerm[PiFrame[ReplacePart[cs, i -> PiHole], k]], True, True]
 (* rule 6 *)
-PiReduce[PiState[PiTerm[{c1__, c2_}, __], PiTerm[{xs__, y_}, _PiTimes, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[PiTerm[{c1}], PiTerm[{xs}], PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], True, True]
+PiReduce[PiState[PiTerm[{c1__, c2_ ? PiTermQ}, ___], PiTerm[{xs__, y_}, _PiTimes, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[PiTerm[{c1}], PiTerm[{xs}], PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], True, True]
 
 (* rule 7 *)
 PiReduce[PiState[c1_, v_, PiTerm[PiFrame[RightComposition[PiHole, c2__], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[RightComposition[c2]], v, PiTerm[PiFrame[c1 /* PiHole, k]], True, True]
@@ -68,6 +68,11 @@ PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], __
 (* rule 16 *)
 PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], ___], PiTerm[PiChoice[2][v : PiTerm[_, b_, ___]], ___], k_, False, False] ? PiStateQ] /; MatchQ[b, a] :=
     PiState[cup, PiTerm[PiChoice[1][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, True]
+
+(* fractional rules *)
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[PiOne, PiUnit, ___], k_, True, True] ? PiStateQ] := PiState[cup, PiTerm[{PiTerm[PiBottom, PiInverse[v]], v}], k, False, True]
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[{PiTerm[PiBottom, ___], v_}, PiTimes[_PiInverse, _], ___], k_, True, True] ? PiStateQ] := PiState[cap, PiTerm[PiOne], k, False, True]
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[{PiTerm[PiBottom, ___], _}, PiTimes[_PiInverse, _], ___], _, True, True] ? PiStateQ] := PiState[$Failed]
 
 (* rule 1 and 2 *)
 PiReduce[PiState[c_, v_, k_, True, True] ? PiStateQ] := PiState[c, c[v], k, False, True]
@@ -105,6 +110,12 @@ PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], __
 (* rule 16 *)
 PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], ___], PiTerm[PiChoice[1][v : PiTerm[_, PiMinus[b_], ___]], ___], k_, False, True] ? PiStateQ] /; MatchQ[b, a] :=
     PiState[cup, PiTerm[PiChoice[2][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, False]
+
+(* fractional rules *)
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[{PiTerm[PiBottom, __], v_}, PiTimes[_PiInverse, _], ___], k_, False, False] ? PiStateQ] := PiState[cup, PiTerm[PiOne], k, True, False]
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[{PiTerm[PiBottom, __], _}, PiTimes[_PiInverse, _], ___], k_, False, False] ? PiStateQ] := PiState[$Failed]
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[PiOne, ___], k_, False, False] ? PiStateQ] := PiState[cap, PiTerm[{PiTerm[PiBottom, PiInverse[v]], v}], k, True, False]
+
 
 (* rule 1 and 2 *)
 PiReduce[PiState[c_, v_, k_, False, False] ? PiStateQ] := PiState[c, PiCombinatorInverse[c][v], k, True, False]
