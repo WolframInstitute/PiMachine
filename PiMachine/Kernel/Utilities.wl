@@ -5,7 +5,8 @@ BeginPackage["Wolfram`PiMachine`"];
 ClearAll[
     Uniquify, UniquifyTypes, CanonicalizeTypes, UnifyFunctionTypes,
     makeReplaceRule, unify,
-    TypeSubstitute
+    TypeSubstitute,
+    HoldFunction
 ]
 
 Begin["`Private`"];
@@ -50,6 +51,8 @@ TypeSubstitute[term_, rules_] := If[PiTermQ[term],
 	PiTerm[TypeSubstitute[term["Term"], rules], term["Type"] /. rules, Sequence @@ term["Arguments"]],
 	term /. t_PiTerm ? PiTermQ :> RuleCondition[TypeSubstitute[t, rules]]
 ]
+
+HoldFunction[f_] := Function[Null, f @@ Unevaluated /@ Hold[##], HoldAllComplete]
 
 End[];
 
