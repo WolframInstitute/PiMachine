@@ -4,7 +4,8 @@ BeginPackage["Wolfram`PiMachine`"];
 
 ClearAll[
     PiState, PiStateQ,
-    PiReduce
+    PiReduce,
+    PiEval, PiEvalTrace
 ]
 
 Begin["`Private`"];
@@ -123,14 +124,27 @@ PiReduce[PiState[c_, v_, k_, False, False] ? PiStateQ] := PiState[c, PiCombinato
 
 (* Eval *)
 
-(* Forward *)
+PiEval[state_ ? PiStateQ] := NestWhile[PiReduce, state, PiStateQ, 1, Infinity, -1]
 
-PiEval[c : PiTerm[_, a_, ___] ? PiTermQ, v : PiTerm[_, a_, ___] ? PiTermQ, True] :=
-    Replace[PiReduce[PiState[c, v, Automatic, True, True]], {PiState[_, w_, _, False, True] ? PiStateQ :> w, _ -> $Failed}]
+PiEvalTrace[state_ ? PiStateQ] := NestWhileList[PiReduce, state, PiStateQ, 1, Infinity, -1]
 
-(* Backward *)
+PiEval[c_, PiTerm[Right[x_], PiForward[t_], args___] ? PiTermQ, dir_ : True] := Replace[
+    PiEval[PiState[c, PiTerm[x, t, args], Automatic, dir, dir]],
+    {
+        PiState[_, w_, PiTerm[PiHole, ___], _, d_] :> PiTerm[If[d == dir, Right, Left][w]],
+        PiState[$Failed] -> PiTerm[$Failed, c["Type"][[2]]]
+    }
+]
 
-(* PiEval[c_, v_, False] *)
+PiEval[c_, PiTerm[Left[x_], PiBackward[t_], args___] ? PiTermQ, dir_ : True] := Replace[
+    PiEval[PiState[c, PiTerm[x, t, args], Automatic, ! dir, ! dir]],
+    {
+        PiState[_, w_, PiTerm[PiHole, ___], _, d_] :> PiTerm[If[d == dir, Right, Left][w]],
+        PiState[$Failed] -> PiTerm[$Failed, c["Type"][[2]]]
+    }
+]
+
+PiEval[c_, term_ ? PiTermQ] := PiEval[c, PiTerm[Right[term], PiForward[term["Type"]]]]
 
 
 (* Apply *)
