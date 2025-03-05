@@ -39,7 +39,7 @@ piTermQ[term_PiTerm] := MatchQ[Unevaluated[term], HoldPattern[
 	PiTerm[Right[PiTerm[_, a_, ___] ? HoldPiTermQ], PiForward[a_] ? HoldPiTypeQ, ___] |
 	PiTerm[Left[PiTerm[_, a_, ___] ? HoldPiTermQ], PiBackward[a_] ? HoldPiTypeQ, ___] |
 	PiTerm[PiBottom, _PiInverse ? PiTypeQ, ___] |
-	PiTerm[_ ? (HoldFunction[FailureQ]), _ ? HoldPiTypeQ, ___]
+	PiTerm[_ ? (HoldFunction[FailureQ]), _PiError ? HoldPiTypeQ, ___]
 ]]
 piTermQ[___] := False
 

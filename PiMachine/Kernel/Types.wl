@@ -5,7 +5,7 @@ BeginPackage["Wolfram`PiMachine`"];
 ClearAll[
     PiZero, PiUnit, PiPlus, PiTimes, PiFunction, PiContinuation,
     PiMinus, PiInverse,
-	PiForward, PiBackward,
+	PiForward, PiBackward, PiError,
 	PiType, HoldPiTypeQ, PiTypeQ
 ]
 
@@ -36,7 +36,7 @@ PiType = HoldPattern[
 	PiMinus[_ ? HoldPiTypeQ] |
 	PiInverse[_ ? HoldPiTermQ] |
 
-	PiForward[_ ? HoldPiTypeQ] | PiBackward[_ ? HoldPiTypeQ]
+	PiForward[_ ? HoldPiTypeQ] | PiBackward[_ ? HoldPiTypeQ] | PiError[_ ? HoldPiTypeQ]
 ]
 PiTypeQ[type_] := MatchQ[Unevaluated[type], PiType]
 PiTypeQ[___] := False
@@ -53,7 +53,7 @@ PiTimes /: MakeBoxes[PiTimes[xs__] ? HoldPiTypeQ, form_] :=
 	InterpretationBox[#, PiTimes[xs], Tooltip -> "\[CircleTimes]: \[CapitalPi] type"] & @ (Parenthesize[CircleTimes[xs], form, Times] /. "\[CircleTimes]" -> "\[Times]")
 
 PiFunction /: MakeBoxes[PiFunction[x_, y_] ? HoldPiTypeQ, form_] :=
-	InterpretationBox[#, PiFunction[x, y], Tooltip -> "\[TwoWayRule]: \[CapitalPi] type"] & @ RowBox[{ToBoxes[x, form], "\[TwoWayRule]", ToBoxes[y, form]}]
+	InterpretationBox[#, PiFunction[x, y], Tooltip -> "\[Rule]: \[CapitalPi] type"] & @ RowBox[{ToBoxes[x, form], "\[Rule]", ToBoxes[y, form]}]
 PiContinuation /: MakeBoxes[PiContinuation[x_, y_] ? HoldPiTypeQ, form_] :=
 	InterpretationBox[#, PiContinuation[x, y], Tooltip -> "CONT: \[CapitalPi] type"] & @ SubscriptBox["CONT", RowBox[{ToBoxes[x, form], "\[TwoWayRule]", ToBoxes[y, form]}]]
 
@@ -63,10 +63,13 @@ PiInverse /: MakeBoxes[PiInverse[x_] ? HoldPiTypeQ, form_] :=
 	InterpretationBox[#, PiInverse[x], Tooltip -> "\!\(\*SuperscriptBox[\(\\\ \), \(-1\)]\): \[CapitalPi] type"] & @ (SuperscriptBox[MakeBoxes[x, form], -1])
 
 PiForward /: MakeBoxes[PiForward[x_] ? HoldPiTypeQ, form_] :=
-	InterpretationBox[#, PiForward[x], Tooltip -> "\[RightArrow]: \[CapitalPi] type"] & @ SuperscriptBox[MakeBoxes[x, form], "\[RightArrow]"]
+	InterpretationBox[#, PiForward[x], Tooltip -> "\[Rule]: \[CapitalPi] type"] & @ SuperscriptBox[MakeBoxes[x, form], "\[Rule]"]
 
 PiBackward /: MakeBoxes[PiBackward[x_] ? HoldPiTypeQ, form_] :=
 	InterpretationBox[#, PiBackward[x], Tooltip -> "\[LeftArrow]: \[CapitalPi] type"] & @ SuperscriptBox[MakeBoxes[x, form], "\[LeftArrow]"]
+
+PiError /: MakeBoxes[PiError[x_] ? HoldPiTypeQ, form_] :=
+	InterpretationBox[#, PiError[x], Tooltip -> "error: \[CapitalPi] type"] & @ FrameBox[MakeBoxes[x, form], FrameStyle -> Red]
 
 
 End[];

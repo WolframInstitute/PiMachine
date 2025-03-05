@@ -90,7 +90,7 @@ PiReduce[PiState[c1_, x_, PiTerm[PiFrame[CircleTimes[PiHole, {c2_, y_}], k_], __
 (* rule 7 *)
 PiReduce[PiState[c2_, v_, PiTerm[PiFrame[c1_ /* PiHole, k_], __], True, False] ? PiStateQ] := PiState[c1, v, PiTerm[PiFrame[PiHole /* c2, k]], False, False]
 (* rule 8 *)
-PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], True, False] ? PiStateQ] := PiState[c1, x, PiTerm[PiFrame[PiTerm[CircleTimes[PiHole, {c2, y}]], k]], False, False]
+PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], True, False] ? PiStateQ] := PiState[c1, x, PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], False, False]
 (* rule 9 *)
 PiReduce[PiState[PiTerm[{c1_, c2__}, __], PiTerm[{x_, ys__}, __], k_, False, False] ? PiStateQ] := PiState[PiTerm[{c2}], PiTerm[{ys}], PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], False, False]
 (* rule 10 *)
@@ -128,19 +128,19 @@ PiEval[state_ ? PiStateQ] := NestWhile[PiReduce, state, PiStateQ, 1, Infinity, -
 
 PiEvalTrace[state_ ? PiStateQ] := NestWhileList[PiReduce, state, PiStateQ, 1, Infinity, -1]
 
-PiEval[c_, PiTerm[Right[x_], PiForward[t_], args___] ? PiTermQ, dir_ : True] := Replace[
+PiEval[c_, PiTerm[Right[x_], PiForward[t_], args___] ? PiTermQ, dir : _ ? BooleanQ : True] := Replace[
     PiEval[PiState[c, PiTerm[x, t, args], Automatic, dir, dir]],
     {
         PiState[_, w_, PiTerm[PiHole, ___], _, d_] :> PiTerm[If[d == dir, Right, Left][w]],
-        PiState[$Failed] -> PiTerm[$Failed, c["Type"][[2]]]
+        PiState[$Failed] -> PiTerm[$Failed, PiError[c["Type"][[2]]]]
     }
 ]
 
-PiEval[c_, PiTerm[Left[x_], PiBackward[t_], args___] ? PiTermQ, dir_ : True] := Replace[
+PiEval[c_, PiTerm[Left[x_], PiBackward[t_], args___] ? PiTermQ, dir : _ ? BooleanQ : True] := Replace[
     PiEval[PiState[c, PiTerm[x, t, args], Automatic, ! dir, ! dir]],
     {
         PiState[_, w_, PiTerm[PiHole, ___], _, d_] :> PiTerm[If[d == dir, Right, Left][w]],
-        PiState[$Failed] -> PiTerm[$Failed, c["Type"][[2]]]
+        PiState[$Failed] -> PiTerm[$Failed, PiError[c["Type"][[2]]]]
     }
 ]
 

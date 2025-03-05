@@ -25,7 +25,9 @@ $PiCombinatorLabels = <|
 	"PlusCup" -> Subscript["\[Eta]", "+"],
 	"PlusCap" -> Subscript["\[Epsilon]", "+"],
 	"TimesCup" -> Subscript["\[Eta]", "*"],
-	"TimesCap" -> Subscript["\[Epsilon]", "*"]
+	"TimesCap" -> Subscript["\[Epsilon]", "*"],
+	"EvalForward" -> "eval",
+	"EvalBackward" -> Superscript["eval", "\[Dagger]"]
 |>
 
 
@@ -85,6 +87,30 @@ PiCombinator["TimesCap"[v_]] := With[{term = PiTerm[v]},
 	PiTerm[{PiTerm[{PiTerm[_, v, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[v], term["Type"]], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
 ]
 
+PiCombinator["EvalForward"] := PiTerm[
+	HoldPattern[c : PiTerm[_, PiFunction[\[FormalCapitalA]_, \[FormalCapitalB]_], ___] ? PiTermQ] :>
+		PiTerm[
+			HoldPattern[PiTerm[PiChoice[i_][x_], PiPlus[PiForward[\[FormalCapitalA]], PiBackward[\[FormalCapitalB]]], ___] ? PiTermQ] :>
+				PiTerm[Replace[PiEval[c, x, True], {y : PiTerm[_Right, ___] :> PiChoice[1][PiChoice[1][y]], y : PiTerm[_Left, ___] :> PiChoice[1][PiChoice[2][y]], _ :> PiChoice[2][$Failed]}], PiPlus[PiPlus[PiForward[\[FormalCapitalB]], PiBackward[\[FormalCapitalA]]], PiError[\[FormalCapitalB]]]],
+			PiFunction[PiPlus[PiForward[\[FormalCapitalA]], PiBackward[\[FormalCapitalB]]], PiPlus[PiPlus[PiForward[\[FormalCapitalB]], PiBackward[\[FormalCapitalA]]], PiError[\[FormalCapitalB]]]],
+			$PiCombinatorLabels["EvalForward"][c]
+		],
+	PiFunction[PiFunction[\[FormalCapitalA]_, \[FormalCapitalB]_], PiFunction[PiPlus[PiForward[\[FormalCapitalA]_], PiBackward[\[FormalCapitalB]_]], PiPlus[PiPlus[PiForward[\[FormalCapitalB]_], PiBackward[\[FormalCapitalA]_]], PiError[\[FormalCapitalB]_]]]],
+	$PiCombinatorLabels["EvalForward"]
+]
+
+PiCombinator["EvalBackward"] := PiTerm[
+	HoldPattern[c : PiTerm[_, PiFunction[\[FormalCapitalA]_, \[FormalCapitalB]_], ___] ? PiTermQ] :>
+		PiTerm[
+			HoldPattern[PiTerm[PiChoice[i_][x_], PiPlus[PiForward[\[FormalCapitalB]], PiBackward[\[FormalCapitalA]]], ___] ? PiTermQ] :>
+				PiTerm[Replace[PiEval[c, x, False], {y : PiTerm[_Right, ___] :> PiChoice[1][PiChoice[1][y]], y : PiTerm[_Left, ___] :> PiChoice[1][PiChoice[2][y]], _ :> PiChoice[2][$Failed]}], PiPlus[PiPlus[PiForward[\[FormalCapitalB]], PiBackward[\[FormalCapitalA]]], PiError[\[FormalCapitalB]]]],
+			PiFunction[PiPlus[PiForward[\[FormalCapitalB]], PiBackward[\[FormalCapitalA]]], PiPlus[PiPlus[PiForward[\[FormalCapitalA]], PiBackward[\[FormalCapitalB]]], PiError[\[FormalCapitalA]]]],
+			$PiCombinatorLabels["EvalBackward"][c]
+		],
+	PiFunction[PiFunction[\[FormalCapitalA]_, \[FormalCapitalB]_], PiFunction[PiPlus[PiForward[\[FormalCapitalB]_], PiBackward[\[FormalCapitalA]_]], PiPlus[PiPlus[PiForward[\[FormalCapitalA]_], PiBackward[\[FormalCapitalB]_]], PiError[\[FormalCapitalA]_]]]],
+	$PiCombinatorLabels["EvalBackward"]
+]
+
 ResourceFunction["AddCodeCompletion"]["PiCombinator"][Replace[DownValues[PiCombinator][[All, 1, 1, 1]], h_String[_] :> h, 1]];
 
 
@@ -104,10 +130,17 @@ $PiCombinatorInverses = {
 	"Factorization" -> "Distribution",
 	"PlusCup" -> "PlusCap",
 	"PlusCap" -> "PlusCup",
-	"TimesCup"[v_] :> "TimesCap"[v],
-	"TimesCap"[v_] :> "TimesCup"[v]
+	"TimesCup" -> "TimesCap",
+	"TimesCap" -> "TimesCup",
+	"EvalForward" -> "EvalBackward",
+	"EvalBackward" -> "EvalForward"
 }
 
+PiCombinatorInverse[PiTerm[fs_RightComposition , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ Reverse[fs], Reverse[t]]
+PiCombinatorInverse[PiTerm[fs_CirclePlus , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
+PiCombinatorInverse[PiTerm[fs : {__ ? PiTermQ} , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
+PiCombinatorInverse[PiTerm[_ , t_PiFunction, (label : $PiCombinatorLabels["TimesCup"] | $PiCombinatorLabels["TimesCap"])[v_ ? PiTermQ], ___] ? PiTermQ] :=
+	Enclose @ PiTerm[PiCombinator[Replace[Confirm @ Lookup[Reverse /@ Normal[$PiCombinatorLabels], label], $PiCombinatorInverses][v]], Reverse[t]]
 PiCombinatorInverse[PiTerm[_ , t_PiFunction, label_, ___] ? PiTermQ] :=
 	Enclose @ PiTerm[PiCombinator[Replace[Confirm @ Lookup[Reverse /@ Normal[$PiCombinatorLabels], label], $PiCombinatorInverses]], Reverse[t]]
 
