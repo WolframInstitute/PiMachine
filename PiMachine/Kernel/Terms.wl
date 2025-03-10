@@ -19,15 +19,15 @@ piTermQ[term_PiTerm] := MatchQ[Unevaluated[term], HoldPattern[
 	(PiTerm[{xs__ ? HoldPiTermQ}, t : HoldPattern @ PiFunction[PiTimes[ts__], PiTimes[us__]] ? HoldPiTypeQ, ___] /; Length[{xs}] == Length[{ts}] == Length[{us}] && Comap[{xs}, "Type"] === MapThread[PiFunction, {{ts}, {us}}]) |
 	
 	PiTerm[_Rule | _RuleDelayed | {(_Rule | _RuleDelayed) ...}, _PiFunction ? HoldPiTypeQ, ___] |
-	(PiTerm[RightComposition[fs__ ? HoldPiTermQ], PiFunction[a_, b_] ? HoldPiTypeQ, ___] /;
+	(PiTerm[CircleDot[fs__ ? HoldPiTermQ], PiFunction[a_, b_] ? HoldPiTypeQ, ___] /;
 		MatchQ[Comap[{fs}, "Type"],
 			{PiFunction[Verbatim[a], c_], ts___PiFunction, PiFunction[d_, Verbatim[b]]} /;
 				AllTrue[Partition[Append[d] @ Prepend[c] @ Catenate[List @@@ {ts}], 2], Apply[SameQ]]
 		]) |
 
 	PiTerm[PiHole, _PiContinuation ? HoldPiTypeQ, ___] |
-	(PiTerm[PiFrame[PiHole /* c2_ ? HoldPiTermQ, k_ ? HoldPiTermQ], t_PiContinuation ? HoldPiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ (PiFunction @@ t) /* c2["Type"]]) |
-	(PiTerm[PiFrame[c1_ ? HoldPiTermQ /* PiHole, k_ ? HoldPiTermQ], t_PiContinuation ? HoldPiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ c1["Type"] /* (PiFunction @@ t)]) |
+	(PiTerm[PiFrame[CircleDot[PiHole, c2_ ? HoldPiTermQ], k_ ? HoldPiTermQ], t_PiContinuation ? HoldPiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ (PiFunction @@ t) /* c2["Type"]]) |
+	(PiTerm[PiFrame[CircleDot[c1_ ? HoldPiTermQ, PiHole], k_ ? HoldPiTermQ], t_PiContinuation ? HoldPiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ c1["Type"] /* (PiFunction @@ t)]) |
 	
 	(PiTerm[PiFrame[CirclePlus[c1_ ? HoldPiTermQ, PiHole], k_ ? HoldPiTermQ], t_PiContinuation ? HoldPiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ PiPlus[c1["Type"], PiFunction @@ t]]) |
 	(PiTerm[PiFrame[CirclePlus[PiHole, c2_ ? HoldPiTermQ], k_ ? HoldPiTermQ], t_PiContinuation ? HoldPiTypeQ, ___] /; MatchQ[k["Type"], PiContinuation @@ PiPlus[PiFunction @@ t, c2["Type"]]]) |
@@ -39,7 +39,7 @@ piTermQ[term_PiTerm] := MatchQ[Unevaluated[term], HoldPattern[
 	PiTerm[Right[PiTerm[_, a_, ___] ? HoldPiTermQ], PiForward[a_] ? HoldPiTypeQ, ___] |
 	PiTerm[Left[PiTerm[_, a_, ___] ? HoldPiTermQ], PiBackward[a_] ? HoldPiTypeQ, ___] |
 	PiTerm[PiBottom, _PiInverse ? PiTypeQ, ___] |
-	PiTerm[_ ? (HoldFunction[FailureQ]), _PiError ? HoldPiTypeQ, ___]
+	PiTerm[_ ? (HoldFunction[FailureQ]), _PiError ? HoldPiTypeQ | PiZero, ___]
 ]]
 piTermQ[___] := False
 
@@ -56,27 +56,29 @@ HoldPattern[PiTerm[_, type_, ___] ? PiTermQ]["Type"] := type
 HoldPattern[PiTerm[_, _, args___] ? PiTermQ]["Arguments"] := {args}
 
 PiTerm[PiOne] := PiTerm[PiOne, PiUnit]
-PiTerm[xs_List] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ xs},
-	PiTerm[If[Length[xs] == 1, PiTerm[First[terms], #], MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiTimes[as__], PiTimes[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiTimes @@ Comap[terms, "Type"], PiTypeQ]
+PiTerm[xs : _List | _CircleTimes] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ List @@ xs},
+	PiTerm[Switch[Length[xs], 0, PiOne, 1, PiTerm[First[terms], #], _, MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiTimes[as__], PiTimes[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiTimes @@ Comap[terms, "Type"], PiTypeQ]
 ]
 PiTerm[xs_CirclePlus] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ List @@ xs},
-	PiTerm[If[Length[xs] == 1, PiTerm[First[terms], #], CirclePlus @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiPlus[as__], PiPlus[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiPlus @@ Comap[terms, "Type"], PiTypeQ]
+	PiTerm[Switch[Length[xs], 0, $Failed, 1, PiTerm[First[terms], #], _, CirclePlus @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiPlus[as__], PiPlus[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiPlus @@ Comap[terms, "Type"], PiTypeQ]
 ]
 PiTerm[PiChoice[i_Integer][x_] /; ! PiTermQ[x], type : HoldPattern[PiPlus[ts__]] ? PiTypeQ, args___] /; 1 <= i <= Length[{ts}] :=
 	Enclose @ PiTerm[PiChoice[i][ConfirmBy[PiTerm[x, {ts}[[i]]], PiTermQ]], type, args]
 PiTerm[PiChoice[i_Integer][x_]] := Enclose @ With[{term = PiTerm[x]}, PiTerm[PiChoice[i][term], ConfirmBy[PiPlus @@ ReplacePart[ConstantArray[PiZero, Max[i, 2]], i -> term["Type"]], PiTypeQ]]]
 
-PiTerm[HoldPattern[RightComposition[fs__ ? PiTermQ]]] := With[{types = UnifyFunctionTypes @ (List @@@ Comap[{fs}, "Type"])},
+PiTerm[CircleDot[t_ ? PiTermQ]] := t
+
+PiTerm[(CircleDot | RightComposition)[fs__ ? PiTermQ]] := With[{types = UnifyFunctionTypes @ (List @@@ Comap[{fs}, "Type"])},
 	PiTerm[
-		RightComposition @@ MapThread[PiTerm[#1, #2, Sequence @@ #3] &, {{fs}, PiFunction @@@ types, Comap[{fs}, "Arguments"]}],
+		CircleDot @@ MapThread[PiTerm[#1, #2, Sequence @@ #3] &, {{fs}, PiFunction @@@ types, Comap[{fs}, "Arguments"]}],
 		PiFunction[types[[1, 1]], types[[-1, 2]]]
 	] /; MatchQ[types, {{_, _} ..}] && AllTrue[Partition[Most @ Rest @ Catenate[types], 2], Apply[SameQ]]
 ]
 
-PiTerm[HoldPattern @ PiFrame[PiHole /* PiTerm[c2_, PiFunction[a_, b_], args1___] ? PiTermQ, PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
-	Enclose[PiTerm[PiFrame[PiHole /* PiTerm[c2, PiFunction[a /. #, b /. #], args1], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[c, a]] & @ Confirm[MostGeneralUnifier[b, d]]]
-PiTerm[HoldPattern @ PiFrame[PiTerm[c1_, PiFunction[a_, b_], args1___] ? PiTermQ /* PiHole, PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
-	Enclose[PiTerm[PiFrame[PiTerm[c1, PiFunction[a /. #, b /. #], args1] /* PiHole, PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[b, d]] & @ Confirm[MostGeneralUnifier[a, c]]]
+PiTerm[HoldPattern @ PiFrame[CircleDot[PiHole, PiTerm[c2_, PiFunction[a_, b_], args1___] ? PiTermQ], PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
+	Enclose[PiTerm[PiFrame[CircleDot[PiHole, PiTerm[c2, PiFunction[a /. #, b /. #], args1]], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[c, a]] & @ Confirm[MostGeneralUnifier[b, d]]]
+PiTerm[HoldPattern @ PiFrame[CircleDot[PiTerm[c1_, PiFunction[a_, b_], args1___] ? PiTermQ, PiHole], PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
+	Enclose[PiTerm[PiFrame[CircleDot[PiTerm[c1, PiFunction[a /. #, b /. #], args1], PiHole], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[b, d]] & @ Confirm[MostGeneralUnifier[a, c]]]
 
 PiTerm[frame : HoldPattern @ PiFrame[CirclePlus[PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, PiHole], PiTerm[_, PiContinuation[PiPlus[a_, c__], PiPlus[b_, d__]], ___] ? PiTermQ]] :=
 	PiTerm[frame, PiContinuation[PiPlus[c], PiPlus[d]]]
@@ -101,6 +103,9 @@ PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ] := Enclose[
 	PiTerm[TypeSubstitute[term["Term"], First @ Confirm[unify[term["Type"], type]]], type, ##] & @@ term["Arguments"]
 ]
 PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ, args__] := PiTerm[PiTerm[term, type]["Term"], type, args]
+PiTerm[term_PiTerm ? PiTermQ, Automatic, args___] := PiTerm[term["Term"], term["Type"], args]
+
+PiTerm[term_PiTerm ? PiTermQ ^ n_Integer] := Which[n == 0, PiTerm[PiUnit], n > 0, PiTerm[ConstantArray[term, n]], True, PiTerm[ConstantArray[PiBottom, - n], ConstantArray[PiInverse[term], - n]]]
 
 
 (* Term equality *)
@@ -122,9 +127,9 @@ PiTerm /: MakeBoxes[term_PiTerm ? HoldPiTermQ, form_] :=
 				PiOne -> ToBoxes[Style[PiOne, Bold], form],
 				PiChoice[i : 1 | 2][_] /; term["Type"] === PiPlus[PiUnit, PiUnit] :> Switch[i, 1, "\[DoubleStruckCapitalF]", 2, "\[DoubleStruckCapitalT]"],
 				PiChoice[i_][t_] :> ToBoxes[Superscript[t, i], form],
-				HoldPattern[RightComposition[xs__]] :> ToBoxes[Row[{xs}, ";"], form],
+				HoldPattern[CircleDot[xs__]] :> ToBoxes[Row[{"(", Row[{xs}, ";"], ")"}], form],
 				(* TODO: Parenthesize properly *)
-				PiFrame[x_, y_] :> RowBox[Riffle[Replace[{x, y}, {t : Except[PiTerm[PiHole, __]] :> With[{expr = Replace[t, RightComposition[a_, b_] :> Row[{"(", a, ";", b, ")"}]]}, Parenthesize[expr, form, Times]], t_ :> ToBoxes[t, form]}, 1], "\[FilledSmallCircle]"]],
+				PiFrame[x_, y_] :> RowBox[{"(", ##, ")"} & @@ Riffle[Replace[{x, y}, {t : Except[PiTerm[PiHole, __]] :> With[{expr = Replace[t, CircleDot[a_, b_] :> Row[{"(", a, ";", b, ")"}]]}, Parenthesize[expr, form, Times]], t_ :> ToBoxes[t, form]}, 1], "\[FilledSmallCircle]"]],
 				Right[x_] :> ToBoxes[Subscript[x, "\[RightTriangle]"], form],
 				Left[x_] :> ToBoxes[Subscript[x, "\[LeftTriangle]"], form],
 				_ ? FailureQ :> "error",

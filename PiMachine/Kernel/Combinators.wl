@@ -15,6 +15,8 @@ $PiCombinatorLabels = <|
 	"PlusSwap" -> Subscript["swap", "+"],
 	"PlusLeftAssociation" -> Subscript["assocl", "+"],
 	"PlusRightAssociation" -> Subscript["assocr", "+"],
+	"ZeroAbsorb" -> "absorbz",
+	"ZeroFactor" -> "factorz",
 	"UnitElimination" -> Row[{Subscript["unite", "*"], "l"}],
 	"UnitIntroduction" -> Row[{Subscript["uniti", "*"], "l"}],
 	"TimesSwap" -> Subscript["swap", "*"],
@@ -53,6 +55,14 @@ PiCombinator["PlusRightAssociation"] := PiTerm[{
 	$PiCombinatorLabels["PlusRightAssociation"]
 ]
 
+PiCombinator["ZeroAbsorb"[v_]] := With[{term = PiTerm[v]}, {type = term["Type"]},
+	PiTerm[{HoldPattern[PiTerm[{z : PiTerm[_, PiZero, ___], PiTerm[_, type, ___]}, __]] :> z, _ -> $Failed}, PiFunction[PiTimes[PiZero, type], PiZero], $PiCombinatorLabels["ZeroAbsorb"][term]]
+]
+
+PiCombinator["ZeroFactor"[v_]] := With[{term = PiTerm[v]},
+	PiTerm[HoldPattern[z : PiTerm[_, PiZero, __]] :> PiTerm[{z, term}], PiFunction[PiZero, PiTimes[PiZero, term["Type"]]], $PiCombinatorLabels["ZeroFactor"][term]]
+]
+
 PiCombinator["UnitElimination"] := PiTerm[HoldPattern[PiTerm[{_, x_}, PiTimes[PiUnit, _], ___]] :> x,  PiFunction[PiTimes[PiUnit, \[FormalCapitalA]_], \[FormalCapitalA]_], $PiCombinatorLabels["UnitElimination"]]
 PiCombinator["UnitIntroduction"] := PiTerm[x_ :> PiTerm[{PiOne, x}], PiFunction[\[FormalCapitalA]_, PiTimes[PiUnit, \[FormalCapitalA]_]], $PiCombinatorLabels["UnitIntroduction"]]
 
@@ -83,8 +93,8 @@ PiCombinator["PlusCap"] := PiTerm[HoldPattern[PiTerm[PiChoice[_][_], __] ? PiTer
 PiCombinator["TimesCup"[v_]] := With[{term = PiTerm[v]},
 	PiTerm[PiTerm[_, PiUnit, ___] :> PiTerm[{term, PiBottom}], PiFunction[PiUnit, PiTimes[PiInverse[term], term["Type"]]], $PiCombinatorLabels["TimesCup"][term]]
 ]
-PiCombinator["TimesCap"[v_]] := With[{term = PiTerm[v]},
-	PiTerm[{PiTerm[{PiTerm[_, v, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[v], term["Type"]], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
+PiCombinator["TimesCap"[v_]] := With[{term = PiTerm[v]}, {type = term["Type"]},
+	PiTerm[{PiTerm[{PiTerm[_, type, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[term], term["Type"]], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
 ]
 
 PiCombinator["EvalForward"] := PiTerm[
@@ -121,6 +131,8 @@ $PiCombinatorInverses = {
 	"PlusSwap" -> "PlusSwap",
 	"PlusLeftAssociation" -> "PlusRightAssociation",
 	"PlusRightAssociation" -> "PlusLeftAssociation",
+	"ZeroAbsorb" -> "ZeroFactor",
+	"ZeroFactor" -> "ZeroAbsorb",
 	"UnitElimination" -> "UnitIntroduction",
 	"UnitIntroduction" -> "UnitElimination",
 	"TimesSwap" -> "TimesSwap",
@@ -136,10 +148,12 @@ $PiCombinatorInverses = {
 	"EvalBackward" -> "EvalForward"
 }
 
-PiCombinatorInverse[PiTerm[fs_RightComposition , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ Reverse[fs], Reverse[t]]
+$ParametricCombinators = {"ZeroAbsorb", "ZeroFactor", "TimesCup", "TimesCap"}
+
+PiCombinatorInverse[PiTerm[fs_CircleDot , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ Reverse[fs], Reverse[t]]
 PiCombinatorInverse[PiTerm[fs_CirclePlus , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
 PiCombinatorInverse[PiTerm[fs : {__ ? PiTermQ} , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
-PiCombinatorInverse[PiTerm[_ , t_PiFunction, (label : $PiCombinatorLabels["TimesCup"] | $PiCombinatorLabels["TimesCap"])[v_ ? PiTermQ], ___] ? PiTermQ] :=
+PiCombinatorInverse[PiTerm[_ , t_PiFunction, (label : Alternatives @@ $PiCombinatorLabels /@ $ParametricCombinators)[v_ ? PiTermQ], ___] ? PiTermQ] :=
 	Enclose @ PiTerm[PiCombinator[Replace[Confirm @ Lookup[Reverse /@ Normal[$PiCombinatorLabels], label], $PiCombinatorInverses][v]], Reverse[t]]
 PiCombinatorInverse[PiTerm[_ , t_PiFunction, label_, ___] ? PiTermQ] :=
 	Enclose @ PiTerm[PiCombinator[Replace[Confirm @ Lookup[Reverse /@ Normal[$PiCombinatorLabels], label], $PiCombinatorInverses]], Reverse[t]]
