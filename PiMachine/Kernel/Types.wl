@@ -63,10 +63,10 @@ PiInverse /: MakeBoxes[PiInverse[x_] ? HoldPiTypeQ, form_] :=
 	InterpretationBox[#, PiInverse[x], Tooltip -> "\!\(\*SuperscriptBox[\(\\\ \), \(-1\)]\): \[CapitalPi] type"] & @ (SuperscriptBox[MakeBoxes[x, form], -1])
 
 PiForward /: MakeBoxes[PiForward[x_] ? HoldPiTypeQ, form_] :=
-	InterpretationBox[#, PiForward[x], Tooltip -> "\[Rule]: \[CapitalPi] type"] & @ SuperscriptBox[MakeBoxes[x, form], "\[Rule]"]
+	InterpretationBox[#, PiForward[x], Tooltip -> "\[Rule]: \[CapitalPi] type"] & @ OverscriptBox[MakeBoxes[x, form], "\[Rule]"]
 
 PiBackward /: MakeBoxes[PiBackward[x_] ? HoldPiTypeQ, form_] :=
-	InterpretationBox[#, PiBackward[x], Tooltip -> "\[LeftArrow]: \[CapitalPi] type"] & @ SuperscriptBox[MakeBoxes[x, form], "\[LeftArrow]"]
+	InterpretationBox[#, PiBackward[x], Tooltip -> "\[LeftArrow]: \[CapitalPi] type"] & @ OverscriptBox[MakeBoxes[x, form], "\[ShortLeftArrow]"]
 
 PiError /: MakeBoxes[PiError[x_] ? HoldPiTypeQ, form_] :=
 	InterpretationBox[#, PiError[x], Tooltip -> "error: \[CapitalPi] type"] & @ FrameBox[MakeBoxes[x, form], FrameStyle -> Red]

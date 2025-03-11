@@ -120,7 +120,7 @@ PiTerm /: Equal[ts__PiTerm] := Equal @@ Through[{ts}["Term"]] && Equal @@ Throug
 Format[PiOne] = "1"
 Format[PiChoice] = "inj"
 Format[PiHole] = "\[Square]"
-Format[PiDiscard] = "\[Perpendicular]"
+Format[PiDiscard] = "↻"
 
 PiTerm /: MakeBoxes[term_PiTerm ? HoldPiTermQ, form_] :=
 	InterpretationBox[#, term] & @ TooltipBox[
