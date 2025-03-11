@@ -1,2 +1,6 @@
 
 PiMachine/build/
+
+**/.DS_Store
+
+*.paclet

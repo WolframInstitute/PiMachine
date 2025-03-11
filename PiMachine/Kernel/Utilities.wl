@@ -39,7 +39,7 @@ unify[x_, y_, patt : Except[OptionsPattern[]] : _Pattern, opts : OptionsPattern[
     },
         patts = DeleteDuplicates[Extract[x, pos]];
 
-        ReleaseHold /@ Association @ DeleteCases[\[FormalX]_ -> Hold[\[FormalX]_]] @ MapThread[Rule, {patts, #}] & /@
+        ReleaseHold /@ Association @ DeleteCases[_[\[FormalX]_, Hold[\[FormalX]_]]] @ MapThread[Rule, {patts, #}] & /@
             ConfirmBy[ReplaceList[y, With[{holdPatts = Hold /@ patts},
                 makeReplaceRule[MapAt[Replace[s_Symbol :> Pattern @@ {s, Blank[]}], x, pos], holdPatts]]], Length[#] > 0 &]
     ],
