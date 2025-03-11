@@ -71,9 +71,9 @@ PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], __
     PiState[cup, PiTerm[PiChoice[1][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, True]
 
 (* fractional rules *)
-PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[PiOne, PiUnit, ___], k_, True, True] ? PiStateQ] := PiState[cup, PiTerm[{PiTerm[PiBottom, PiInverse[v]], v}], k, False, True]
-PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[{PiTerm[PiBottom, ___], v_}, PiTimes[_PiInverse, _], ___], k_, True, True] ? PiStateQ] := PiState[cap, PiTerm[PiOne], k, False, True]
-PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[{PiTerm[PiBottom, ___], _}, PiTimes[_PiInverse, _], ___], _, True, True] ? PiStateQ] := PiState[$Failed]
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[PiOne, PiUnit, ___], k_, True, True] ? PiStateQ] := PiState[cup, PiTerm[{PiTerm[PiDiscard, PiInverse[v]], v}], k, False, True]
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[{PiTerm[PiDiscard, ___], v_}, PiTimes[_PiInverse, _], ___], k_, True, True] ? PiStateQ] := PiState[cap, PiTerm[PiOne], k, False, True]
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[{PiTerm[PiDiscard, ___], _}, PiTimes[_PiInverse, _], ___], _, True, True] ? PiStateQ] := PiState[$Failed]
 
 (* rule 1 and 2 *)
 PiReduce[PiState[c_, v_, k_, True, True] ? PiStateQ] := PiState[c, c[v], k, False, True]
@@ -113,9 +113,9 @@ PiReduce[PiState[cup : PiTerm[_, PiFunction[PiZero, PiPlus[PiMinus[a_], a_]], __
     PiState[cup, PiTerm[PiChoice[2][PiTerm[- v]], PiPlus[PiMinus[b], b]], k, False, False]
 
 (* fractional rules *)
-PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[{PiTerm[PiBottom, __], v_}, PiTimes[_PiInverse, _], ___], k_, False, False] ? PiStateQ] := PiState[cup, PiTerm[PiOne], k, True, False]
-PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[{PiTerm[PiBottom, __], _}, PiTimes[_PiInverse, _], ___], k_, False, False] ? PiStateQ] := PiState[$Failed]
-PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[PiOne, ___], k_, False, False] ? PiStateQ] := PiState[cap, PiTerm[{PiTerm[PiBottom, PiInverse[v]], v}], k, True, False]
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[{PiTerm[PiDiscard, __], v_}, PiTimes[_PiInverse, _], ___], k_, False, False] ? PiStateQ] := PiState[cup, PiTerm[PiOne], k, True, False]
+PiReduce[PiState[cup : PiTerm[_, PiFunction[PiUnit, PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_]], ___], PiTerm[{PiTerm[PiDiscard, __], _}, PiTimes[_PiInverse, _], ___], k_, False, False] ? PiStateQ] := PiState[$Failed]
+PiReduce[PiState[cap : PiTerm[_, PiFunction[PiTimes[PiInverse[v : PiTerm[_, a_, ___]], a_], PiUnit], ___], PiTerm[PiOne, ___], k_, False, False] ? PiStateQ] := PiState[cap, PiTerm[{PiTerm[PiDiscard, PiInverse[v]], v}], k, True, False]
 
 
 (* rule 1 and 2 *)
@@ -151,7 +151,7 @@ PiEval[c_, term_ ? PiTermQ] := PiEval[c, PiTerm[Right[term], PiForward[term["Typ
 
 PiTerm[comp_CircleDot, _PiFunction, ___][x_PiTerm ? PiTermQ] := (RightComposition @@ comp)[x]
 PiTerm[choice_CirclePlus, _PiFunction, ___][PiTerm[PiChoice[i_][x_ ? PiTermQ], t_PiPlus, ___] ? PiTermQ] /; 1 <= i Length[choice] := With[{u = choice[[i]][x]}, PiTerm[PiChoice[i][u], ReplacePart[t, i -> u["Type"]]]]
-PiTerm[fs : {__PiTerm}, _PiFunction, ___][PiTerm[xs : {__PiTerm ? PiTermQ}, _PiTimes, ___] ? PiTermQ] /; Length[fs] == Length[xs] := PiTerm[MapThread[Construct, {fs, xs}]]
+PiTerm[fs : CircleTimes[__PiTerm], _PiFunction, ___][PiTerm[xs : CircleTimes[__PiTerm ? PiTermQ], _PiTimes, ___] ? PiTermQ] /; Length[fs] == Length[xs] := PiTerm[MapThread[Construct, {List @@ fs, List @@ xs}]]
 PiTerm[rules_, PiFunction[a_, b_], ___][x_PiTerm ? PiTermQ] := Enclose @ ConfirmBy[Replace[ConfirmBy[x, MatchQ[#["Type"], a] &], rules], MatchQ[#["Type"], b] &]
 
 

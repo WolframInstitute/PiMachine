@@ -4,7 +4,7 @@ BeginPackage["Wolfram`PiMachine`"];
 
 ClearAll[
     PiTerm, HoldPiTermQ, PiTermQ,
-	PiOne, PiChoice, PiHole, PiFrame, PiBottom
+	PiOne, PiChoice, PiHole, PiFrame, PiDiscard
 ]
 
 Begin["`Private`"];
@@ -38,7 +38,7 @@ piTermQ[term_PiTerm] := MatchQ[Unevaluated[term], HoldPattern[
 	PiTerm[- PiTerm[_, a_, ___], PiMinus[a_] ? HoldPiTypeQ, ___] | 
 	PiTerm[Right[PiTerm[_, a_, ___] ? HoldPiTermQ], PiForward[a_] ? HoldPiTypeQ, ___] |
 	PiTerm[Left[PiTerm[_, a_, ___] ? HoldPiTermQ], PiBackward[a_] ? HoldPiTypeQ, ___] |
-	PiTerm[PiBottom, _PiInverse ? PiTypeQ, ___] |
+	PiTerm[PiDiscard, _PiInverse ? PiTypeQ, ___] |
 	PiTerm[_ ? (HoldFunction[FailureQ]), _PiError ? HoldPiTypeQ | PiZero, ___]
 ]]
 piTermQ[___] := False
@@ -107,7 +107,7 @@ PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ] := Enclose[
 PiTerm[term_PiTerm ? PiTermQ, type_ ? PiTypeQ, args__] := PiTerm[PiTerm[term, type]["Term"], type, args]
 PiTerm[term_PiTerm ? PiTermQ, Automatic, args___] := PiTerm[term["Term"], term["Type"], args]
 
-PiTerm[term_PiTerm ? PiTermQ ^ n_Integer] := Which[n == 0, PiTerm[PiUnit], n > 0, PiTerm[ConstantArray[term, n]], True, PiTerm[ConstantArray[PiBottom, - n], ConstantArray[PiInverse[term], - n]]]
+PiTerm[term_PiTerm ? PiTermQ ^ n_Integer] := Which[n == 0, PiTerm[PiUnit], n > 0, PiTerm[ConstantArray[term, n]], True, PiTerm[ConstantArray[PiDiscard, - n], ConstantArray[PiInverse[term], - n]]]
 
 
 (* Term equality *)
@@ -120,7 +120,7 @@ PiTerm /: Equal[ts__PiTerm] := Equal @@ Through[{ts}["Term"]] && Equal @@ Throug
 Format[PiOne] = "1"
 Format[PiChoice] = "inj"
 Format[PiHole] = "\[Square]"
-Format[PiBottom] = "\[Perpendicular]"
+Format[PiDiscard] = "\[Perpendicular]"
 
 PiTerm /: MakeBoxes[term_PiTerm ? HoldPiTermQ, form_] :=
 	InterpretationBox[#, term] & @ TooltipBox[

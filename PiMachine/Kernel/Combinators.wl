@@ -88,13 +88,13 @@ PiCombinator["Factorization"] := PiTerm[{
 ]
 
 PiCombinator["PlusCup"] := PiTerm[Except[_] :> PiTerm[PiChoice[2][PiOne]], PiFunction[PiZero, PiPlus[PiMinus[\[FormalCapitalA]_], \[FormalCapitalA]_]], $PiCombinatorLabels["PlusCup"]]
-PiCombinator["PlusCap"] := PiTerm[HoldPattern[PiTerm[PiChoice[_][_], __] ? PiTermQ] :> PiTerm[PiBottom, PiZero], PiFunction[PiPlus[PiMinus[\[FormalCapitalA]_], \[FormalCapitalA]_], PiZero], $PiCombinatorLabels["PlusCap"]]
+PiCombinator["PlusCap"] := PiTerm[HoldPattern[PiTerm[PiChoice[_][_], __] ? PiTermQ] :> PiTerm[PiDiscard, PiZero], PiFunction[PiPlus[PiMinus[\[FormalCapitalA]_], \[FormalCapitalA]_], PiZero], $PiCombinatorLabels["PlusCap"]]
 
 PiCombinator["TimesCup"[v_]] := With[{term = PiTerm[v]},
-	PiTerm[PiTerm[_, PiUnit, ___] :> PiTerm[{term, PiBottom}], PiFunction[PiUnit, PiTimes[PiInverse[term], term["Type"]]], $PiCombinatorLabels["TimesCup"][term]]
+	PiTerm[PiTerm[_, PiUnit, ___] :> PiTerm[{term, PiDiscard}], PiFunction[PiUnit, PiTimes[PiInverse[term], term["Type"]]], $PiCombinatorLabels["TimesCup"][term]]
 ]
 PiCombinator["TimesCap"[v_]] := With[{term = PiTerm[v]}, {type = term["Type"]},
-	PiTerm[{PiTerm[{PiTerm[_, type, ___], PiBottom}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[term], term["Type"]], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
+	PiTerm[{PiTerm[{PiTerm[_, type, ___], PiDiscard}, ___] ? PiTermQ :> PiTerm[PiUnit], _ :> $Failed}, PiFunction[PiTimes[PiInverse[term], term["Type"]], PiUnit], $PiCombinatorLabels["TimesCap"][term]]
 ]
 
 PiCombinator["EvalForward"] := PiTerm[
