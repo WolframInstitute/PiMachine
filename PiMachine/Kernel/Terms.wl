@@ -15,8 +15,8 @@ piTermQ[term_PiTerm] := MatchQ[Unevaluated[term], HoldPattern[
 	(PiTerm[PiChoice[i_Integer][x_ ? HoldPiTermQ], PiPlus[ts__] ? HoldPiTypeQ, ___] /; 1 <= i <= Length[{ts}] && x["Type"] === {ts}[[i]]) |
 	(PiTerm[CirclePlus[xs__ ? HoldPiTermQ], t : HoldPattern @ PiFunction[PiPlus[ts__], PiPlus[us__]] ? HoldPiTypeQ, ___] /; Length[{xs}] == Length[{ts}] == Length[{us}] && Comap[{xs}, "Type"] === MapThread[PiFunction, {{ts}, {us}}]) |
 	
-	(PiTerm[{xs__ ? HoldPiTermQ}, PiTimes[ts__] ? HoldPiTypeQ, ___] /; Length[{xs}] == Length[{ts}] && Comap[{xs}, "Type"] === {ts}) |
-	(PiTerm[{xs__ ? HoldPiTermQ}, t : HoldPattern @ PiFunction[PiTimes[ts__], PiTimes[us__]] ? HoldPiTypeQ, ___] /; Length[{xs}] == Length[{ts}] == Length[{us}] && Comap[{xs}, "Type"] === MapThread[PiFunction, {{ts}, {us}}]) |
+	(PiTerm[CircleTimes[xs__ ? HoldPiTermQ], PiTimes[ts__] ? HoldPiTypeQ, ___] /; Length[{xs}] == Length[{ts}] && Comap[{xs}, "Type"] === {ts}) |
+	(PiTerm[CircleTimes[xs__ ? HoldPiTermQ], t : HoldPattern @ PiFunction[PiTimes[ts__], PiTimes[us__]] ? HoldPiTypeQ, ___] /; Length[{xs}] == Length[{ts}] == Length[{us}] && Comap[{xs}, "Type"] === MapThread[PiFunction, {{ts}, {us}}]) |
 	
 	PiTerm[_Rule | _RuleDelayed | {(_Rule | _RuleDelayed) ...}, _PiFunction ? HoldPiTypeQ, ___] |
 	(PiTerm[CircleDot[fs__ ? HoldPiTermQ], PiFunction[a_, b_] ? HoldPiTypeQ, ___] /;
@@ -57,8 +57,10 @@ HoldPattern[PiTerm[_, _, args___] ? PiTermQ]["Arguments"] := {args}
 
 PiTerm[PiOne] := PiTerm[PiOne, PiUnit]
 PiTerm[xs : _List | _CircleTimes] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ List @@ xs},
-	PiTerm[Switch[Length[xs], 0, PiOne, 1, PiTerm[First[terms], #], _, MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiTimes[as__], PiTimes[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiTimes @@ Comap[terms, "Type"], PiTypeQ]
+	PiTerm[Switch[Length[xs], 0, PiOne, 1, PiTerm[First[terms], #], _, CircleTimes @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiTimes[as__], PiTimes[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiTimes @@ Comap[terms, "Type"], PiTypeQ]
 ]
+PiTerm[xs_List, type_PiTimes, args___] := PiTerm[CircleTimes @@ xs, type, args]
+
 PiTerm[xs_CirclePlus] := Enclose @ With[{terms = ConfirmBy[PiTerm[#], PiTermQ] & /@ List @@ xs},
 	PiTerm[Switch[Length[xs], 0, $Failed, 1, PiTerm[First[terms], #], _, CirclePlus @@ MapThread[PiTerm, {terms, List @@ Replace[#, HoldPattern @ PiFunction[PiPlus[as__], PiPlus[bs__]] :> MapThread[PiFunction, {{as}, {bs}}]]}]], #] & @ ConfirmBy[PiPlus @@ Comap[terms, "Type"], PiTypeQ]
 ]

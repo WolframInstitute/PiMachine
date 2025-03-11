@@ -41,14 +41,14 @@ PiReduce[PiState[PiTerm[CircleDot[c1__, c2_], __], v_, k_, True, True] ? PiState
 (* rule 4 and 5 *)
 PiReduce[PiState[PiTerm[cs_CirclePlus, __], PiTerm[PiChoice[i_][x_], _PiPlus, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[cs[[i]], x, PiTerm[PiFrame[ReplacePart[cs, i -> PiHole], k]], True, True]
 (* rule 6 *)
-PiReduce[PiState[PiTerm[{c1__, c2_ ? PiTermQ}, ___], PiTerm[{xs__, y_}, _PiTimes, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[PiTerm[{c1}], PiTerm[{xs}], PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], True, True]
+PiReduce[PiState[PiTerm[CircleTimes[c1__, c2_ ? PiTermQ], ___], PiTerm[CircleTimes[xs__, y_], _PiTimes, ___] ? PiTermQ, k_, True, True] ? PiStateQ] := PiState[PiTerm[{c1}], PiTerm[{xs}], PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], True, True]
 
 (* rule 7 *)
 PiReduce[PiState[c1_, v_, PiTerm[PiFrame[CircleDot[PiHole, c2__], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[CircleDot[c2]], v, PiTerm[PiFrame[CircleDot[c1, PiHole], k]], True, True]
 (* rule 8 *)
 PiReduce[PiState[c1_, x_, PiTerm[PiFrame[CircleTimes[PiHole, {c2_, y_}], k_], __], False, True] ? PiStateQ] := PiState[c2, y, PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], True, True]
 (* rule 9 *)
-PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[{c1, c2}, PiFunction @@ k["Type"]], PiTerm[{x, y}], k, False, True]
+PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[CircleTimes[c1, c2], PiFunction @@ k["Type"]], PiTerm[{x, y}], k, False, True]
 (* rule 10 *)
 PiReduce[PiState[c2_, v_, PiTerm[PiFrame[CircleDot[c1_, PiHole], k_], __], False, True] ? PiStateQ] := PiState[PiTerm[CircleDot[c1, c2], PiFunction @@ k["Type"]], v, k, False, True]
 (* rule 11 *)
@@ -92,7 +92,7 @@ PiReduce[PiState[c2_, v_, PiTerm[PiFrame[CircleDot[c1_, PiHole], k_], __], True,
 (* rule 8 *)
 PiReduce[PiState[c2_, y_, PiTerm[PiFrame[CircleTimes[{c1_, x_}, PiHole], k_], __], True, False] ? PiStateQ] := PiState[c1, x, PiTerm[PiFrame[CircleTimes[PiHole, {c2, y}], k]], False, False]
 (* rule 9 *)
-PiReduce[PiState[PiTerm[{c1_, c2__}, __], PiTerm[{x_, ys__}, __], k_, False, False] ? PiStateQ] := PiState[PiTerm[{c2}], PiTerm[{ys}], PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], False, False]
+PiReduce[PiState[PiTerm[CircleTimes[c1_, c2__], __], PiTerm[CircleTimes[x_, ys__], __], k_, False, False] ? PiStateQ] := PiState[PiTerm[{c2}], PiTerm[{ys}], PiTerm[PiFrame[CircleTimes[{c1, x}, PiHole], k]], False, False]
 (* rule 10 *)
 PiReduce[PiState[PiTerm[CircleDot[c1_, c2__], __], v_, k_, False, False] ? PiStateQ] := PiState[PiTerm[CircleDot[c2]], v, PiTerm[PiFrame[CircleDot[PiTerm[c1], PiHole], k]], False, False]
 (* rule 11 and 12 *)

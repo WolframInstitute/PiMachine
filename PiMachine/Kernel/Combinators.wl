@@ -56,32 +56,32 @@ PiCombinator["PlusRightAssociation"] := PiTerm[{
 ]
 
 PiCombinator["ZeroAbsorb"[v_]] := With[{term = PiTerm[v]}, {type = term["Type"]},
-	PiTerm[{HoldPattern[PiTerm[{z : PiTerm[_, PiZero, ___], PiTerm[_, type, ___]}, __]] :> z, _ -> $Failed}, PiFunction[PiTimes[PiZero, type], PiZero], $PiCombinatorLabels["ZeroAbsorb"][term]]
+	PiTerm[{HoldPattern[PiTerm[CircleTimes[z : PiTerm[_, PiZero, ___], PiTerm[_, type, ___]], __]] :> z, _ -> $Failed}, PiFunction[PiTimes[PiZero, type], PiZero], $PiCombinatorLabels["ZeroAbsorb"][term]]
 ]
 
 PiCombinator["ZeroFactor"[v_]] := With[{term = PiTerm[v]},
 	PiTerm[HoldPattern[z : PiTerm[_, PiZero, __]] :> PiTerm[{z, term}], PiFunction[PiZero, PiTimes[PiZero, term["Type"]]], $PiCombinatorLabels["ZeroFactor"][term]]
 ]
 
-PiCombinator["UnitElimination"] := PiTerm[HoldPattern[PiTerm[{_, x_}, PiTimes[PiUnit, _], ___]] :> x,  PiFunction[PiTimes[PiUnit, \[FormalCapitalA]_], \[FormalCapitalA]_], $PiCombinatorLabels["UnitElimination"]]
+PiCombinator["UnitElimination"] := PiTerm[HoldPattern[PiTerm[CircleTimes[_, x_], PiTimes[PiUnit, _], ___]] :> x, PiFunction[PiTimes[PiUnit, \[FormalCapitalA]_], \[FormalCapitalA]_], $PiCombinatorLabels["UnitElimination"]]
 PiCombinator["UnitIntroduction"] := PiTerm[x_ :> PiTerm[{PiOne, x}], PiFunction[\[FormalCapitalA]_, PiTimes[PiUnit, \[FormalCapitalA]_]], $PiCombinatorLabels["UnitIntroduction"]]
 
-PiCombinator["TimesSwap"] := PiTerm[PiTerm[{x_, y_}, __] :> PiTerm[{y, x}], PiFunction[PiTimes[\[FormalCapitalA]_, \[FormalCapitalB]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalA]_]], $PiCombinatorLabels["TimesSwap"]]
+PiCombinator["TimesSwap"] := PiTerm[PiTerm[CircleTimes[x_, y_], __] :> PiTerm[{y, x}], PiFunction[PiTimes[\[FormalCapitalA]_, \[FormalCapitalB]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalA]_]], $PiCombinatorLabels["TimesSwap"]]
 
-PiCombinator["TimesLeftAssociation"] := PiTerm[HoldPattern[PiTerm[{x_, PiTerm[{y_, z_}, __]}, __]] :> PiTerm[{PiTerm[{x, y}], z}], PiFunction[PiTimes[\[FormalCapitalA]_, PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]], PiTimes[PiTimes[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_]], $PiCombinatorLabels["TimesLeftAssociation"]]
-PiCombinator["TimesRightAssociation"] := PiTerm[HoldPattern[PiTerm[{PiTerm[{x_, y_}, __], z_}, __]] :> PiTerm[{x, PiTerm[{y, z}]}], PiFunction[PiTimes[PiTimes[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_], PiTimes[\[FormalCapitalA]_, PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]], $PiCombinatorLabels["TimesRightAssociation"]]
+PiCombinator["TimesLeftAssociation"] := PiTerm[HoldPattern[PiTerm[CircleTimes[x_, PiTerm[CircleTimes[y_, z_], __]], __]] :> PiTerm[{PiTerm[{x, y}], z}], PiFunction[PiTimes[\[FormalCapitalA]_, PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]], PiTimes[PiTimes[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_]], $PiCombinatorLabels["TimesLeftAssociation"]]
+PiCombinator["TimesRightAssociation"] := PiTerm[HoldPattern[PiTerm[CircleTimes[PiTerm[CircleTimes[x_, y_], __], z_], __]] :> PiTerm[{x, PiTerm[{y, z}]}], PiFunction[PiTimes[PiTimes[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_], PiTimes[\[FormalCapitalA]_, PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]], $PiCombinatorLabels["TimesRightAssociation"]]
 
 PiCombinator["Distribution"] := PiTerm[{
-	HoldPattern[PiTerm[{PiTerm[PiChoice[1][x_], __], z_}, PiTimes[PiPlus[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_], ___]] :> PiTerm[PiChoice[1][{x, z}], PiPlus[PiTimes[\[FormalCapitalA], \[FormalCapitalC]], PiTimes[\[FormalCapitalB], \[FormalCapitalC]]]],
-	HoldPattern[PiTerm[{PiTerm[PiChoice[2][y_], __], z_}, PiTimes[PiPlus[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_]]] :> PiTerm[PiChoice[2][{y, z}], PiPlus[PiTimes[\[FormalCapitalA], \[FormalCapitalC]], PiTimes[\[FormalCapitalB], \[FormalCapitalC]]]]
+	HoldPattern[PiTerm[CircleTimes[PiTerm[PiChoice[1][x_], __], z_], PiTimes[PiPlus[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_], ___]] :> PiTerm[PiChoice[1][{x, z}], PiPlus[PiTimes[\[FormalCapitalA], \[FormalCapitalC]], PiTimes[\[FormalCapitalB], \[FormalCapitalC]]]],
+	HoldPattern[PiTerm[CircleTimes[PiTerm[PiChoice[2][y_], __], z_], PiTimes[PiPlus[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_]]] :> PiTerm[PiChoice[2][{y, z}], PiPlus[PiTimes[\[FormalCapitalA], \[FormalCapitalC]], PiTimes[\[FormalCapitalB], \[FormalCapitalC]]]]
 },
 	PiFunction[PiTimes[PiPlus[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_], PiPlus[PiTimes[\[FormalCapitalA]_, \[FormalCapitalC]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]],
 	$PiCombinatorLabels["Distribution"]
 ]
 
 PiCombinator["Factorization"] := PiTerm[{
-	HoldPattern[PiTerm[PiChoice[1][PiTerm[{x_, z_}, __]], PiPlus[PiTimes[\[FormalCapitalA]_, \[FormalCapitalC]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]]] :> PiTerm[{PiTerm[PiChoice[1][x], PiPlus[\[FormalCapitalA], \[FormalCapitalB]]], z}],
-	HoldPattern[PiTerm[PiChoice[2][PiTerm[{y_, z_}, __]], PiPlus[PiTimes[\[FormalCapitalA]_, \[FormalCapitalC]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]]] :> PiTerm[{PiTerm[PiChoice[2][y], PiPlus[\[FormalCapitalA], \[FormalCapitalB]]], z}]
+	HoldPattern[PiTerm[PiChoice[1][PiTerm[CircleTimes[x_, z_], __]], PiPlus[PiTimes[\[FormalCapitalA]_, \[FormalCapitalC]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]]] :> PiTerm[{PiTerm[PiChoice[1][x], PiPlus[\[FormalCapitalA], \[FormalCapitalB]]], z}],
+	HoldPattern[PiTerm[PiChoice[2][PiTerm[CircleTimes[y_, z_], __]], PiPlus[PiTimes[\[FormalCapitalA]_, \[FormalCapitalC]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]]]] :> PiTerm[{PiTerm[PiChoice[2][y], PiPlus[\[FormalCapitalA], \[FormalCapitalB]]], z}]
 },
 	PiFunction[PiPlus[PiTimes[\[FormalCapitalA]_, \[FormalCapitalC]_], PiTimes[\[FormalCapitalB]_, \[FormalCapitalC]_]], PiTimes[PiPlus[\[FormalCapitalA]_, \[FormalCapitalB]_], \[FormalCapitalC]_]],
 	$PiCombinatorLabels["Factorization"]
@@ -152,7 +152,7 @@ $ParametricCombinators = {"ZeroAbsorb", "ZeroFactor", "TimesCup", "TimesCap"}
 
 PiCombinatorInverse[PiTerm[fs_CircleDot , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ Reverse[fs], Reverse[t]]
 PiCombinatorInverse[PiTerm[fs_CirclePlus , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
-PiCombinatorInverse[PiTerm[fs : {__ ? PiTermQ} , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
+PiCombinatorInverse[PiTerm[fs : CircleTimes[__ ? PiTermQ] , t_PiFunction, ___] ? PiTermQ] := PiTerm[PiCombinatorInverse /@ fs, Reverse[t]]
 PiCombinatorInverse[PiTerm[_ , t_PiFunction, (label : Alternatives @@ $PiCombinatorLabels /@ $ParametricCombinators)[v_ ? PiTermQ], ___] ? PiTermQ] :=
 	Enclose @ PiTerm[PiCombinator[Replace[Confirm @ Lookup[Reverse /@ Normal[$PiCombinatorLabels], label], $PiCombinatorInverses][v]], Reverse[t]]
 PiCombinatorInverse[PiTerm[_ , t_PiFunction, label_, ___] ? PiTermQ] :=
