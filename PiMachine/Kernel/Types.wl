@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["Wolfram`PiMachine`"];
+BeginPackage["WolframInstitute`PiMachine`"];
 
 ClearAll[
     PiZero, PiUnit, PiPlus, PiTimes, PiFunction, PiContinuation,

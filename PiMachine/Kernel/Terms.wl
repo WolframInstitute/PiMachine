@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["Wolfram`PiMachine`"];
+BeginPackage["WolframInstitute`PiMachine`"];
 
 ClearAll[
     PiTerm, HoldPiTermQ, PiTermQ,

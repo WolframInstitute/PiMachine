@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`PiMachine`"];
+BeginPackage["WolframInstitute`PiMachine`"];
 
 ClearAll[
     MostGeneralUnifier

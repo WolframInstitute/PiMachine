@@ -1,21 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["Wolfram`PiMachine`"];
-
-ClearAll[
-    PiBool, PiTrue, PiFalse, PiBoolId,
-    PiNot, PiCNot, PiIf, PiToffoli, PiToffoli0,
-    PiBoolTerms,
-    PiCopy, PiReset,
-    PiRotateLeft, PiRotateRight,
-    PiIncrement,
-    PiZigZag,
-    PiPlusTrace, PiPlusTraceLeft, PiTimesTrace, PiTimesTraceLeft,
-    PiLoop,
-    PiAnd, PiNand, PiNor, PiOr, PiXor
-]
-
-Begin["`Private`"];
+BeginPackage["`Programs`", "WolframInstitute`PiMachine`"];
 
 
 id = PiCombinator["Identity"]
@@ -60,6 +45,24 @@ factorl = PiTerm[PiTerm[CirclePlus[swapt, swapt]] /* factor /* swapt]
 etar = PiTerm[eta /* swap]
 epsr = PiTerm[swap /* eps]
 
+EndPackage[];
+
+BeginPackage["WolframInstitute`PiMachine`", "WolframInstitute`PiMachine`Programs`"];
+
+ClearAll[
+    PiBool, PiTrue, PiFalse, PiBoolId,
+    PiNot, PiCNot, PiIf, PiToffoli, PiToffoli0,
+    PiBoolTerms,
+    PiCopy, PiReset,
+    PiRotateLeft, PiRotateRight,
+    PiIncrement,
+    PiZigZag,
+    PiPlusTrace, PiPlusTraceLeft, PiTimesTrace, PiTimesTraceLeft,
+    PiLoop,
+    PiAnd, PiNand, PiNor, PiOr, PiXor
+]
+
+Begin["`Private`"];
 
 
 PiBool[0] := PiUnit

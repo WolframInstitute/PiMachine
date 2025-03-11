@@ -1,19 +1,19 @@
 PacletObject[
   <|
-    "Name" -> "Wolfram/PiMachine",
+    "Name" -> "WolframInstitute/PiMachine",
     "Description" -> "Universal Reversible Machine",
     "Creator" -> "Nikolay Murzin",
     "Version" -> "1.0.0",
     "WolframVersion" -> "14.2+",
-    "PublisherID" -> "Wolfram",
+    "PublisherID" -> "WolframInstitute",
     "License" -> "MIT",
-    "PrimaryContext" -> "Wolfram`PiMachine`",
+    "PrimaryContext" -> "WolframInstitute`PiMachine`",
     "DocumentationURL" -> "https://resources.wolframcloud.com/PacletRepository/resources",
     "Extensions" -> {
       {
         "Kernel",
         "Root" -> "Kernel",
-        "Context" -> {"Wolfram`PiMachine`"}
+        "Context" -> {"WolframInstitute`PiMachine`"}
       },
       {
         "Documentation",

@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["Wolfram`PiMachine`"];
+BeginPackage["WolframInstitute`PiMachine`"];
 
 ClearAll[
     PiCombinator, PiCombinatorInverse
@@ -121,7 +121,9 @@ PiCombinator["EvalBackward"] := PiTerm[
 	$PiCombinatorLabels["EvalBackward"]
 ]
 
-ResourceFunction["AddCodeCompletion"]["PiCombinator"][Replace[DownValues[PiCombinator][[All, 1, 1, 1]], h_String[_] :> h, 1]];
+PiCombinator[] := Keys[$PiCombinatorLabels]
+
+ResourceFunction["AddCodeCompletion"]["PiCombinator"][Keys[$PiCombinatorLabels]]
 
 
 $PiCombinatorInverses = {

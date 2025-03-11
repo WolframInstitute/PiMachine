@@ -1,15 +1,15 @@
 (* ::Package:: *)
 
-BeginPackage["Wolfram`PiMachine`"];
+BeginPackage["WolframInstitute`PiMachine`"];
 
 (* ::Text:: *)
 (*Declare your public symbols here:*)
-Get["Wolfram`PiMachine`Temp`"];
-Get["Wolfram`PiMachine`Utilities`"];
-Get["Wolfram`PiMachine`Types`"];
-Get["Wolfram`PiMachine`Terms`"];
-Get["Wolfram`PiMachine`Combinators`"];
-Get["Wolfram`PiMachine`Interpreter`"];
-Get["Wolfram`PiMachine`Programs`"];
+Get["WolframInstitute`PiMachine`Temp`"];
+Get["WolframInstitute`PiMachine`Utilities`"];
+Get["WolframInstitute`PiMachine`Types`"];
+Get["WolframInstitute`PiMachine`Terms`"];
+Get["WolframInstitute`PiMachine`Combinators`"];
+Get["WolframInstitute`PiMachine`Interpreter`"];
+Get["WolframInstitute`PiMachine`Programs`"];
 
 EndPackage[];

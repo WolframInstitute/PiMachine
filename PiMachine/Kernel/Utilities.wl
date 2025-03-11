@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-BeginPackage["Wolfram`PiMachine`"];
+BeginPackage["WolframInstitute`PiMachine`"];
 
 ClearAll[
     Uniquify, UniquifyTypes, CanonicalizeTypes, UnifyFunctionTypes,
@@ -18,7 +18,7 @@ Uniquify[expr_, ref_ : None] := With[{types = DeleteDuplicates @ Cases[Replace[r
 UniquifyTypes[expr_, ref_ : None] := expr /. Uniquify[expr, ref]
 
 CanonicalizeTypes[expr_] := With[{types = DeleteDuplicates @ Cases[expr, Verbatim[Pattern][name_, _] :> Hold[name], All]},
-	expr /. MapThread[{old, new} |-> Function[Null, HoldPattern @@ old :> #, HoldFirst] @@ new, {types, ToExpression["\[FormalCapital" <> ToUpperCase[#] <> "]", StandardForm, Hold] & /@ Take[Alphabet[], Length[types]]}]
+	expr /. MapThread[{old, new} |-> Function[Null, HoldPattern @@ old :> #, HoldFirst] @@ new, {types, ToExpression["\\[FormalCapital" <> ToUpperCase[#] <> "]", StandardForm, Hold] & /@ Take[Alphabet[], Length[types]]}]
 ]
 UnifyFunctionTypes[fs : {{_, _} ..}, g : {_, _}] := Enclose @ With[{ug = UniquifyTypes[g, g[[1]]]},
 	CanonicalizeTypes[Append[fs, ug] /. Confirm[MostGeneralUnifier @@ {fs[[-1, 2]], ug[[1]]}]]
