@@ -3,6 +3,9 @@
 BeginPackage["`Programs`", "WolframInstitute`PiMachine`"];
 
 
+false = PiFalse
+true = PiTrue
+
 id = PiCombinator["Identity"]
 
 zeroi = PiCombinator["ZeroIntroduction"] 
@@ -25,6 +28,9 @@ factor = PiCombinator["Factorization"]
 
 eta = PiCombinator["PlusCup"]
 eps = PiCombinator["PlusCap"]
+
+etat[v_] := PiCombinator["TimesCup"[v]]
+epst[v_] := PiCombinator["TimesCap"[v]]
 
 zeroer = PiTerm[swap /* zeroe]
 
@@ -52,14 +58,15 @@ BeginPackage["WolframInstitute`PiMachine`", "WolframInstitute`PiMachine`Programs
 ClearAll[
     PiBool, PiTrue, PiFalse, PiBoolId,
     PiNot, PiCNot, PiIf, PiToffoli, PiToffoli0,
-    PiBoolTerms,
+    PiFalseTuple, PiBoolTerms,
     PiCopy, PiReset,
     PiRotateLeft, PiRotateRight,
     PiIncrement,
     PiZigZag,
     PiPlusTrace, PiPlusTraceLeft, PiTimesTrace, PiTimesTraceLeft,
     PiLoop,
-    PiAnd, PiNand, PiNor, PiOr, PiXor
+    PiAnd, PiNand, PiNor, PiOr, PiXor,
+    PiMerge, PiSplit, PiFNot, PiSAT
 ]
 
 Begin["`Private`"];
@@ -93,6 +100,8 @@ PiToffoli[n_Integer ? Positive] := PiIf[id, PiToffoli[n - 1]]
 PiToffoli0[0] := PiBoolId[0]
 PiToffoli0[1] := PiTerm[swap, PiFunction[PiBool[1], PiBool[1]]]
 PiToffoli0[n_Integer ? Positive] := PiIf[PiToffoli0[n - 1], id]
+
+PiFalseTuple[n_Integer] := PiTerm @ ReplaceRepeated[ConstantArray[PiFalse, n], xs_List /; Length[xs] > 2 :> TakeDrop[xs, 1]]
 
 PiBoolTerms[n_Integer] := PiTerm @* ReplaceRepeated[xs_List /; Length[xs] > 2 :> TakeDrop[xs, 1]] /@ Tuples[{PiTrue, PiFalse}, n]
 
@@ -157,6 +166,30 @@ PiNor = PiTerm[PiOr /* PiTerm[{PiNot, id}]]
 
 PiXor = PiTerm[PiTerm[distl /* PiTerm[CirclePlus[id, PiTerm[{swap, id}]]] /* factorl], PiFunction[PiBool[2], PiBool[2]]]
 
+
+PiMerge[0, m_] := PiTerm[unite, PiFunction[PiTimes[PiUnit, PiBool[m]], PiBool[m]]]
+PiMerge[1, 0] := PiTerm[uniter, PiFunction[PiTimes[PiBool[1], PiUnit], PiBool[1]]]
+PiMerge[1, 1] := PiTerm[id, PiFunction[PiBool[2], PiBool[2]]]
+PiMerge[1, m_] := PiTerm[id, PiFunction[PiTimes[PiBool[1], PiBool[m - 1]], PiBool[m]]]
+PiMerge[n_, m_] := PiTerm[assocrt /* {id, PiMerge[n - 1, m]}]
+
+PiSplit[n_, m_] := PiCombinatorInverse[PiMerge[n, m]]
+
+PiFNot[f : PiTerm[_, PiFunction[PiBool[1], PiBool[1]], __] ? PiTermQ] := f
+PiFNot[f : PiTerm[_, PiFunction[a_PiTimes, a_PiTimes], __] ? PiTermQ] := PiTerm[f /* {PiNot, id}]
+
+PiSAT[f : PiTerm[_, PiFunction[a_, a_], ___] ? PiTermQ] := Enclose @ With[{n = ConfirmBy[Log2[PiCardinality[a]], IntegerQ] - 1},
+    PiPlusTraceLeft[
+        PiFalseTuple[n + 3],
+        PiTerm[
+            {id, {id, PiLoop[PiFNot[f]] /* {id, PiSplit[1, n]}} /*
+                 {id, assoclt /* {PiCopy[n], id} /* assocrt} /*
+                 assoclt /* {swapt, id} /* assocr /*
+                 {id, {id, PiMerge[1, n]} /* PiCombinatorInverse[PiLoop[PiFNot[f]]]}
+            }
+        ]
+    ]
+]
 
 End[];
 
