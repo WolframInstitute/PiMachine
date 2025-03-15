@@ -128,6 +128,8 @@ PiEval[state_ ? PiStateQ] := NestWhile[PiReduce, state, PiStateQ, 1, Infinity, -
 
 PiEvalTrace[state_ ? PiStateQ] := NestWhileList[PiReduce, state, PiStateQ, 1, Infinity, -1]
 
+PiEvalTrace[c_ ? PiTermQ, x_ ? PiTermQ] := PiEvalTrace[PiState[c, x]]
+
 PiEval[c_, PiTerm[Right[x_], PiForward[t_], args___] ? PiTermQ, dir : _ ? BooleanQ : True] := Replace[
     PiEval[PiState[c, PiTerm[x, t, args], Automatic, dir, dir]],
     {
@@ -153,7 +155,8 @@ PiTerm[comp_CircleDot, _PiFunction, ___][x_PiTerm ? PiTermQ] := (RightCompositio
 PiTerm[choice_CirclePlus, _PiFunction, ___][PiTerm[PiChoice[i_][x_ ? PiTermQ], t_PiPlus, ___] ? PiTermQ] /; 1 <= i Length[choice] := With[{u = choice[[i]][x]}, PiTerm[PiChoice[i][u], ReplacePart[t, i -> u["Type"]]]]
 PiTerm[fs : CircleTimes[__PiTerm], _PiFunction, ___][PiTerm[xs : CircleTimes[__PiTerm ? PiTermQ], _PiTimes, ___] ? PiTermQ] /; Length[fs] == Length[xs] := PiTerm[MapThread[Construct, {List @@ fs, List @@ xs}]]
 PiTerm[rules_, PiFunction[a_, b_], ___][x_PiTerm ? PiTermQ] := Enclose @ ConfirmBy[Replace[ConfirmBy[x, MatchQ[#["Type"], a] &], rules], MatchQ[#["Type"], b] &]
-
+(term : PiTerm[_, PiFunction[PiZero, _], ___])[] := term @ PiTerm[$Failed, PiZero]
+(term : PiTerm[_, PiFunction[PiUnit, _], ___])[] := term @ PiTerm[PiOne]
 
 (* Formatting *)
 

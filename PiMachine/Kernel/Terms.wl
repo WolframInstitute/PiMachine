@@ -53,6 +53,7 @@ term_PiTerm /; System`Private`HoldNotValidQ[term] && piTermQ[Unevaluated[term]] 
 
 HoldPattern[PiTerm[term_, ___] ? PiTermQ]["Term"] := term
 HoldPattern[PiTerm[_, type_, ___] ? PiTermQ]["Type"] := type
+HoldPattern[PiTerm[_, _, label_, ___] ? PiTermQ]["Label"] := label
 HoldPattern[PiTerm[_, _, args___] ? PiTermQ]["Arguments"] := {args}
 
 PiTerm[PiOne] := PiTerm[PiOne, PiUnit]
@@ -68,13 +69,15 @@ PiTerm[PiChoice[i_Integer][x_] /; ! PiTermQ[x], type : HoldPattern[PiPlus[ts__]]
 	Enclose @ PiTerm[PiChoice[i][ConfirmBy[PiTerm[x, {ts}[[i]]], PiTermQ]], type, args]
 PiTerm[PiChoice[i_Integer][x_]] := Enclose @ With[{term = PiTerm[x]}, PiTerm[PiChoice[i][term], ConfirmBy[PiPlus @@ ReplacePart[ConstantArray[PiZero, Max[i, 2]], i -> term["Type"]], PiTypeQ]]]
 
-PiTerm[CircleDot[t_ ? PiTermQ]] := t
+PiTerm[CircleDot[t_]] := t
 
-PiTerm[(CircleDot | RightComposition)[fs__ ? PiTermQ]] := With[{types = UnifyFunctionTypes @ (List @@@ Comap[{fs}, "Type"])},
+PiTerm[(CircleDot | RightComposition)[fs___]] := Enclose @ With[{terms = ConfirmBy[PiTerm /@ {fs}, AllTrue[PiTermQ]]}, {types = UnifyFunctionTypes @ (List @@@ Comap[terms, "Type"])},
+	ConfirmMatch[types, {{_, _} ..}];
+	Scan[ConfirmAssert[SameQ @@ #, "Function types are incompatible after unification."] &, Partition[Most @ Rest @ Catenate[types], 2]];
 	PiTerm[
-		CircleDot @@ MapThread[PiTerm[#1, #2, Sequence @@ #3] &, {{fs}, PiFunction @@@ types, Comap[{fs}, "Arguments"]}],
+		CircleDot @@ MapThread[PiTerm[#1, #2, Sequence @@ #3] &, {terms, PiFunction @@@ types, Comap[terms, "Arguments"]}],
 		PiFunction[types[[1, 1]], types[[-1, 2]]]
-	] /; MatchQ[types, {{_, _} ..}] && AllTrue[Partition[Most @ Rest @ Catenate[types], 2], Apply[SameQ]]
+	]
 ]
 
 PiTerm[HoldPattern @ PiFrame[CircleDot[PiHole, PiTerm[c2_, PiFunction[a_, b_], args1___] ? PiTermQ], PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=

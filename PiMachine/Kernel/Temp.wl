@@ -20,7 +20,7 @@ disagreementSet // ClearAll
 disagreementSet[term_ ...] := {}
 
 disagreementSet[terms : Except[Pattern][___] ...] := 
- If[SameQ @@ Hold /@ Unevaluated@{terms}, {}, 
+ If[SameQ @@ Hold /@ Unevaluated@{terms} || AllTrue[Unevaluated@{terms}, Function[Null, AtomQ[Unevaluated[#]], HoldAll]], {}, 
   Enclose@With[{rec = 
       Unevaluated[disagreementSet[##]] & @@ 
        ConfirmBy[Hold @@@ Unevaluated@{terms}, 
