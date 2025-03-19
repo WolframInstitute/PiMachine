@@ -2,9 +2,9 @@
 
 BeginPackage["`Programs`", "WolframInstitute`PiMachine`"];
 
-
-false = PiFalse
-true = PiTrue
+bool = PiPlus[PiUnit, PiUnit]
+false = PiTerm[PiChoice[1][PiOne], bool]
+true = PiTerm[PiChoice[2][PiOne], bool]
 
 id = PiCombinator["Identity"]
 
@@ -51,6 +51,8 @@ factorl = PiTerm[PiTerm[CirclePlus[swapt, swapt]] /* factor /* swapt]
 etar = PiTerm[eta /* swap]
 epsr = PiTerm[swap /* eps]
 
+inv = PiCombinatorInverse
+
 EndPackage[];
 
 BeginPackage["WolframInstitute`PiMachine`", "WolframInstitute`PiMachine`Programs`"];
@@ -63,7 +65,7 @@ ClearAll[
     PiRotateLeft, PiRotateRight,
     PiIncrement,
     PiZigZag,
-    PiPlusTrace, PiPlusTraceLeft, PiTimesTrace, PiTimesTraceLeft,
+    PiPlusTrace, PiPlusTraceRight, PiTimesTrace, PiTimesTraceRight,
     PiLoop,
     PiAnd, PiNand, PiNor, PiOr, PiXor,
     PiMerge, PiSplit, PiFNot, PiSAT
@@ -73,13 +75,13 @@ Begin["`Private`"];
 
 
 PiBool[0] := PiUnit
-PiBool[1] := PiPlus[PiUnit, PiUnit]
-PiBool[n_Integer] := PiTimes[PiBool[1], PiBool[n - 1]]
+PiBool[1] := bool
+PiBool[n_Integer] := PiTimes[bool, PiBool[n - 1]]
 
 PiBoolId[n_Integer ? NonNegative] := PiTerm[id, PiFunction[PiBool[n], PiBool[n]]]
 
-PiFalse = PiTerm[PiChoice[1][PiOne], PiBool[1]]
-PiTrue = PiTerm[PiChoice[2][PiOne], PiBool[1]]
+PiFalse = false
+PiTrue = true
 
 PiNot = PiTerm[swap, PiFunction[PiBool[1], PiBool[1]]]
 
@@ -136,11 +138,11 @@ PiIncrement[n_Integer ? Positive] := PiTerm[PiTerm[{id, PiIncrement[n - 1]}] /* 
 
 PiPlusTrace[f_] := PiTerm[zeroi /* PiTerm[CirclePlus[eta, id]] /* assocr /* PiTerm[CirclePlus[id, f]] /* assocl /* PiTerm[CirclePlus[eps, id]] /* zeroe]
 
-PiPlusTraceLeft[f_] := PiTerm[zeroir /* PiTerm[CirclePlus[id, etar]] /* assocl /* PiTerm[CirclePlus[f, id]] /* assocr /* PiTerm[CirclePlus[id, epsr]] /* zeroer]
+PiPlusTraceRight[f_] := PiTerm[zeroir /* PiTerm[CirclePlus[id, etar]] /* assocl /* PiTerm[CirclePlus[f, id]] /* assocr /* PiTerm[CirclePlus[id, epsr]] /* zeroer]
 
 PiTimesTrace[v_, f_] := PiTerm[uniti /* PiTerm[{PiCombinator["TimesCup"[v]], id}] /* assocrt /* PiTerm[{id, f}] /* assoclt /* PiTerm[{PiCombinator["TimesCap"[v]], id}] /* unite]
 
-PiTimesTraceLeft[v_, f_] := PiTerm[unitir /* PiTerm[{id, PiTerm[PiCombinator["TimesCup"[v] /* swapt]]}] /* assoclt /* PiTerm[{f, id}] /* assocrt /* PiTerm[{id, PiTerm[swapt /* PiCombinator["TimesCap"[v]]]}] /* uniter]
+PiTimesTraceRight[v_, f_] := PiTerm[unitir /* PiTerm[{id, PiTerm[PiCombinator["TimesCup"[v]] /* swapt]}] /* assoclt /* PiTerm[{f, id}] /* assocrt /* PiTerm[{id, PiTerm[swapt /* PiCombinator["TimesCap"[v]]]}] /* uniter]
 
 PiZigZag = PiPlusTrace[swap]
 
@@ -148,7 +150,7 @@ PiZigZag = PiPlusTrace[swap]
 PiLoop[0, _] := PiBoolId[0]
 PiLoop[1, f_] := PiTerm[{PiBoolId[1], f}]
 PiLoop[n_Integer ? Positive, f_] :=
-    PiTerm[PiPlusTraceLeft[PiTerm[
+    PiTerm[PiPlusTraceRight[PiTerm[
         PiTerm[CirclePlus[dist, id]] /* swapr /* PiTerm[CirclePlus[factor, id]] /*
         PiTerm[CirclePlus[PiTerm[PiReset[n] /* PiTerm[{id, f}] /* PiCopy[n] /* PiTerm[{id, PiCombinatorInverse[f]}]], id]] /*
         PiTerm[CirclePlus[dist, id]] /* swapr /* PiTerm[CirclePlus[factor, PiTerm[{id, PiIncrement[n]}]]]
@@ -169,23 +171,23 @@ PiXor = PiTerm[PiTerm[distl /* PiTerm[CirclePlus[id, PiTerm[{swap, id}]]] /* fac
 
 PiMerge[0, m_] := PiTerm[unite, PiFunction[PiTimes[PiUnit, PiBool[m]], PiBool[m]]]
 PiMerge[1, 0] := PiTerm[uniter, PiFunction[PiTimes[PiBool[1], PiUnit], PiBool[1]]]
-PiMerge[1, 1] := PiTerm[id, PiFunction[PiBool[2], PiBool[2]]]
-PiMerge[1, m_] := PiTerm[id, PiFunction[PiTimes[PiBool[1], PiBool[m - 1]], PiBool[m]]]
+(* PiMerge[1, 1] := PiTerm[id, PiFunction[PiBool[2], PiBool[2]]] *)
+PiMerge[1, m_] := PiTerm[id, PiFunction[PiTimes[PiBool[1], PiBool[m]], PiBool[m + 1]]]
 PiMerge[n_, m_] := PiTerm[assocrt /* {id, PiMerge[n - 1, m]}]
 
 PiSplit[n_, m_] := PiCombinatorInverse[PiMerge[n, m]]
 
-PiFNot[f : PiTerm[_, PiFunction[PiBool[1], PiBool[1]], __] ? PiTermQ] := f
-PiFNot[f : PiTerm[_, PiFunction[a_PiTimes, a_PiTimes], __] ? PiTermQ] := PiTerm[f /* {PiNot, id}]
+PiFNot[f : PiTerm[_, PiFunction[PiBool[1], PiBool[1]], ___] ? PiTermQ] := f
+PiFNot[f : PiTerm[_, PiFunction[a_PiTimes, a_PiTimes], ___] ? PiTermQ] := PiTerm[f /* {PiNot, id}]
 
 PiSAT[f : PiTerm[_, PiFunction[a_, a_], ___] ? PiTermQ] := Enclose @ With[{n = ConfirmBy[Log2[PiCardinality[a]], IntegerQ] - 1},
-    PiPlusTraceLeft[
+    PiTimesTraceRight[
         PiFalseTuple[n + 3],
         PiTerm[
-            {id, {id, PiLoop[PiFNot[f]] /* {id, PiSplit[1, n]}} /*
-                 {id, assoclt /* {PiCopy[n], id} /* assocrt} /*
-                 assoclt /* {swapt, id} /* assocr /*
-                 {id, {id, PiMerge[1, n]} /* PiCombinatorInverse[PiLoop[PiFNot[f]]]}
+            {PiBoolId[0], {id, PiLoop[n + 1, PiFNot[f]] /* {id, PiSplit[1, n]}} /*
+                 {id, assoclt /* {PiCopy[n - 1], id} /* assocrt} /*
+                 assoclt /* {swapt, id} /* assocrt /*
+                 {id, {id, PiMerge[1, n]} /* PiCombinatorInverse[PiLoop[n + 1, PiFNot[f]]]}
             }
         ]
     ]
@@ -193,4 +195,63 @@ PiSAT[f : PiTerm[_, PiFunction[a_, a_], ___] ? PiTermQ] := Enclose @ With[{n = C
 
 End[];
 
-EndPackage[]; 
+EndPackage[];
+
+
+BeginPackage["`SAT`", {"WolframInstitute`PiMachine`", "WolframInstitute`PiMachine`Programs`"}];
+
+(* Ex₁(𝔽,a,b) = ((a∧b) xor (a∧b),_,_) *)
+
+Ex1 = PiTimesTraceRight[PiFalse, PiTerm[
+    swapt /*
+    {id, PiAnd} /* assoclt /* {swapt, id} /* assocrt /*
+    {id, PiAnd} /* assoclt /* {PiXor, id} /* assocrt /*
+    {id, inv[PiAnd]} /* assoclt /* {swapt, id} /* assocrt /*
+    swapt
+]]
+
+(* Ex₂(𝔽,a,b) = ((a∧b) xor (a∨b),_,_) *)
+
+Ex2 = PiTimesTraceRight[PiFalse, PiTerm[
+    swapt /*
+    {id, PiAnd} /* assoclt /* {swapt, id} /* assocrt /*
+    {id, PiOr} /* assoclt /* {PiXor, id} /* assocrt /*
+    {id, inv[PiOr]} /* assoclt /* {swapt, id} /* assocrt /*
+    swapt
+]]
+
+
+(* Ex₃(𝔽,a,b) = (((a∧b) ∧ (a xor b)),_,_) *)
+
+Ex3 = With[{F = PiTerm[PiAnd /* {id, PiXor}]},
+    PiTimesTraceRight[PiFalse, PiTerm[
+        swapt /*
+        assoclt /* {swapt, id} /* assocrt /*
+        {id, F} /*
+        {id, assoclt} /* assoclt /*
+        {PiAnd, id} /*
+        assocrt /* {id, assocrt} /* 
+        {id, inv[F]} /*
+        assoclt /* {swapt, id} /* assocrt /*
+        swapt
+    ]]
+]
+
+(* Ex₄(𝔽,a,b) = (((a∨b) ∧ (a xor b)),_,_) *)
+
+Ex4 = With[{F = PiTerm[PiOr /* {id, PiXor}]},
+    PiTimesTraceRight[PiFalse, PiTerm[
+        swapt /*
+        assoclt /* {swapt, id} /* assocrt /*
+        {id, F} /*
+        {id, assoclt} /* assoclt /*
+        {PiAnd, id} /*
+        assocrt /* {id, assocrt} /*
+        {id, inv[F]} /*
+        assoclt /* {swapt, id} /* assocrt /*
+        swapt
+    ]]
+]
+
+EndPackage[];
+
