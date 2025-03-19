@@ -81,9 +81,9 @@ PiTerm[(CircleDot | RightComposition)[fs___]] := Enclose @ With[{terms = Confirm
 ]
 
 PiTerm[HoldPattern @ PiFrame[CircleDot[PiHole, PiTerm[c2_, PiFunction[a_, b_], args1___] ? PiTermQ], PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
-	Enclose[PiTerm[PiFrame[CircleDot[PiHole, PiTerm[c2, PiFunction[a /. #, b /. #], args1]], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[c, a]] & @ Confirm[MostGeneralUnifier[b, d]]]
+	Enclose[PiTerm[PiFrame[CircleDot[PiHole, PiTerm[c2, PiFunction[a /. #, b /. #], args1]], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[c, a]] & @ Confirm[ResourceFunction["MostGeneralUnifier"][b, d]]]
 PiTerm[HoldPattern @ PiFrame[CircleDot[PiTerm[c1_, PiFunction[a_, b_], args1___] ? PiTermQ, PiHole], PiTerm[k_, PiContinuation[c_, d_], args2___] ? PiTermQ]] :=
-	Enclose[PiTerm[PiFrame[CircleDot[PiTerm[c1, PiFunction[a /. #, b /. #], args1], PiHole], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[b, d]] & @ Confirm[MostGeneralUnifier[a, c]]]
+	Enclose[PiTerm[PiFrame[CircleDot[PiTerm[c1, PiFunction[a /. #, b /. #], args1], PiHole], PiTerm[k, PiContinuation[c /. #, d /. #], args2]], PiContinuation[b, d]] & @ Confirm[ResourceFunction["MostGeneralUnifier"][a, c]]]
 
 PiTerm[frame : HoldPattern @ PiFrame[CirclePlus[PiTerm[_, PiFunction[a_, b_], ___] ? PiTermQ, PiHole], PiTerm[_, PiContinuation[PiPlus[a_, c__], PiPlus[b_, d__]], ___] ? PiTermQ]] :=
 	PiTerm[frame, PiContinuation[PiPlus[c], PiPlus[d]]]

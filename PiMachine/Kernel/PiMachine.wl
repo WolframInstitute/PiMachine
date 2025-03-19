@@ -9,7 +9,6 @@ ClearAll[
 ]
 
 
-Get["WolframInstitute`PiMachine`Temp`"];
 Get["WolframInstitute`PiMachine`Utilities`"];
 Get["WolframInstitute`PiMachine`Types`"];
 Get["WolframInstitute`PiMachine`Terms`"];
