@@ -1,3 +1,10 @@
+Quiet @ Check[
+    Get["ProcessTheoryLoader`"]
+    ,
+    PacletInstall["https://www.wolframcloud.com/obj/nikm/ProcessTheoryLoader.paclet", ForceVersionInstall -> True];
+    Check[Get["ProcessTheoryLoader`"], Throw[$Failed]]
+]
+
 BeginPackage["WolframInstitute`PiMachine`", {"WolframInstitute`PiMachine`Programs`", "ProcessTheory`Diagram`"}];
 
 ClearAll[
