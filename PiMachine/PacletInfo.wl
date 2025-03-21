@@ -7,7 +7,7 @@ PacletObject[
     "Creator" -> "Nik Murzin",
     "License" -> "MIT",
     "PublisherID" -> "WolframInstitute",
-    "Version" -> "1.0.1",
+    "Version" -> "1.0.2",
     "WolframVersion" -> "14.2+",
     "PrimaryContext" -> "WolframInstitute`PiMachine`",
     "DocumentationURL" -> "https://resources.wolframcloud.com/PacletRepository/resources",
